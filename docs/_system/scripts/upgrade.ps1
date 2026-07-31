@@ -32,6 +32,7 @@ $downloadPath = Join-Path $workRoot 'ottodoc.zip'
 $systemReplaced = $false
 $generatedFilesBackedUp = $false
 $indexesBackedUp = $false
+$intakeCreated = $false
 $succeeded = $false
 
 $platformTargets = @{
@@ -108,6 +109,14 @@ function Restore-Installation {
         }
         Move-Item -LiteralPath $backupSystem -Destination $oldSystemRoot
     }
+
+    if ($intakeCreated) {
+        $intakePath = Join-Path $docsRoot '_intake'
+        if ((Test-Path -LiteralPath $intakePath -PathType Container) -and
+            @(Get-ChildItem -LiteralPath $intakePath -Force).Count -eq 0) {
+            Remove-Item -LiteralPath $intakePath -Force
+        }
+    }
 }
 
 try {
@@ -156,6 +165,13 @@ try {
     Move-Item -LiteralPath $oldSystemRoot -Destination $backupSystem
     Move-Item -LiteralPath $incomingSystem -Destination $oldSystemRoot
     $systemReplaced = $true
+
+    $intakePath = Join-Path $docsRoot '_intake'
+    if (-not (Test-Path -LiteralPath $intakePath)) {
+        New-Item -ItemType Directory -Path $intakePath | Out-Null
+        $intakeCreated = $true
+        Write-Output 'CREATED: docs/_intake/'
+    }
 
     $configure = Join-Path $oldSystemRoot 'scripts/configure-platform.ps1'
     $lint = Join-Path $oldSystemRoot 'scripts/lint.ps1'

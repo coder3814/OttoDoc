@@ -21,6 +21,12 @@ foreach ($kind in $Script:KindDirs.Keys) {
     }
 }
 
+$intakePath = Join-Path $docsRoot '_intake'
+if (-not (Test-Path -LiteralPath $intakePath)) {
+    New-Item -ItemType Directory -Path $intakePath | Out-Null
+    Write-Output 'CREATED: docs/_intake/'
+}
+
 & (Join-Path $PSScriptRoot 'configure-platform.ps1') -Platform $Platform
 if ($LASTEXITCODE -ne 0) {
     Write-Output 'BOOTSTRAP FAILED: agent platform was not configured.'

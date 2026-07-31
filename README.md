@@ -233,12 +233,13 @@ docs/
 |   `-- index.md
 |-- runbooks/
 |   `-- index.md
+|-- _intake/
 |-- _system/
 |   `-- ...
 `-- index.md
 ```
 
-Each kind exists from the beginning, even when it contains no documents. Its generated `index.md` keeps the directory visible in Git and provides a stable navigation entry point. As documents are added, OttoDoc regenerates these indexes from the knowledge tree.
+Each kind exists from the beginning, even when it contains no documents. Its generated `index.md` keeps the directory visible in Git and provides a stable navigation entry point. The installer also creates the empty, durable `_intake/` directory where users place source material for `OttoDoc intake`; consumed files are removed, but the directory remains. As documents are added, OttoDoc regenerates the indexes from the knowledge tree.
 
 Review and commit the installed files. From that point forward, contributors, agents, and CI share the same documentation contract.
 
