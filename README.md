@@ -1,6 +1,6 @@
-# Portable Docs Engine
+# OttoDoc
 
-Portable Docs Engine is a repository-local documentation system for teams and coding agents. It defines a durable knowledge contract, structured document types, multi-agent authoring and review workflows, linting and index generation, and adapters for Claude, Codex, Cursor, and GitHub Actions.
+OttoDoc is a repository-local documentation system for teams and coding agents. It defines a durable knowledge contract, structured document types, multi-agent authoring and review workflows, linting and index generation, and adapters for Claude, Codex, Cursor, and GitHub Actions.
 
 ## Install
 
