@@ -28,7 +28,7 @@ Prefer updates over creation. A proposed document must identify a future reader 
 
 Report unrelated implementation concerns separately without fixing them or creating files or issues.
 
-For intake, reject directories, duplicate filenames, and files the active agent cannot read. When a source yields no live documentation, report that conclusion and obtain owner approval before dispatching deletion.
+For `OttoDoc intake [filename]`, treat the filename as optional. With one filename, assess that direct child of `docs/_intake/`; with no filename, assess every file currently in the folder. Reject paths, directories, multiple filenames, filename patterns, duplicate filenames, and files the active agent cannot read. When a source yields no live documentation, report that conclusion and obtain owner approval before dispatching deletion.
 
 ## Orchestrate
 

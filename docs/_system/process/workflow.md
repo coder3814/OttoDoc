@@ -6,6 +6,12 @@ This is the canonical process for documentation assessment, authoring, normaliza
 
 Documentation-only work may inspect the repository but may modify only `docs/`. It never fixes code, tests, scripts, workflows, configuration, infrastructure, schemas, or deployed state. Validation is repository-only; never query live or external systems. Report implementation concerns in the task result and create no issue or findings file without separate authorization.
 
+## Agent interface
+
+`OttoDoc <action>` is the portable, first-class command form in any supported agent interface. Supported actions are `install`, `assess`, `create`, `update`, `move`, `retire`, `intake`, `review`, `check`, `fix`, and `explain`. Treat a request beginning with an OttoDoc command as an explicit request to use this documentation engine. The agent selects the applicable workflow, roles, templates, and deterministic tooling from the action and the instructions that follow it.
+
+`OttoDoc intake [filename]` accepts one optional filename: one filename processes that direct child of `docs/_intake/`, while no filename processes the entire folder. Do not require users to name or invoke implementation scripts. Scripts remain available to agents, maintainers, and CI as the execution layer.
+
 ## Agent-driven work
 
 Dispatch `doc-coordinator` after every completed system-modifying task and for agent-driven documentation work. The coordinator assesses impact itself and may conclude that no documentation change is justified. When work is needed, it dispatches `doc-author`, then a fresh-context `doc-reviewer`, returning findings to the author for at most two revision cycles before asking the owner.
@@ -14,11 +20,11 @@ Required documentation remains in the same change or pull request as its impleme
 
 ## Human drafts
 
-Humans may place rough documents and external material directly in the flat `docs/_intake/` folder without conforming to the final structure. Filenames must be unique; do not add directories. Placement is inert: route selected intake files through the coordinator only after an explicit user processing request. The author preserves intended meaning and human-provided external facts while normalizing kind, scope, summary-first structure, concision, links, and frontmatter; material ambiguity returns to the owner.
+Humans may place rough documents and external material directly in the flat `docs/_intake/` folder without conforming to the final structure. Filenames must be unique; do not add directories. Placement is inert. `OttoDoc intake <filename>` routes that one direct child through the coordinator; `OttoDoc intake` routes every file currently in intake. Reject paths, directories, multiple filenames, and filename patterns. The author preserves intended meaning and human-provided external facts while normalizing kind, scope, summary-first structure, concision, links, and frontmatter; material ambiguity returns to the owner.
 
-## Direct human workflow
+## Direct maintainer workflow
 
-Humans may scaffold or edit documentation directly. Agent normalization and fresh-context review follow before completion.
+Maintainers may scaffold or edit documentation directly when they need the underlying execution layer. Agent normalization and fresh-context review follow before completion.
 
 - Scaffold: `docs/_system/scripts/scaffold.ps1 -Kind <runbook|reference|decision|explanation|plan|design> -Slug <kebab-slug> -Title "<Title>" -Actor "<actor>" [-Subject <kebab-subject>]`
 - Lint: `docs/_system/scripts/lint.ps1`
