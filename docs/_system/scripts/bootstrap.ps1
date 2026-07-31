@@ -21,9 +21,9 @@ foreach ($kind in $Script:KindDirs.Keys) {
     }
 }
 
-& (Join-Path $PSScriptRoot 'install-adapters.ps1') -Platform $Platform
+& (Join-Path $PSScriptRoot 'configure-platform.ps1') -Platform $Platform
 if ($LASTEXITCODE -ne 0) {
-    Write-Output 'BOOTSTRAP FAILED: platform adapters were not installed.'
+    Write-Output 'BOOTSTRAP FAILED: agent platform was not configured.'
     exit 1
 }
 
@@ -33,9 +33,9 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-& (Join-Path $PSScriptRoot 'install-adapters.ps1') -Platform $Platform -Check
+& (Join-Path $PSScriptRoot 'configure-platform.ps1') -Platform $Platform -Check
 if ($LASTEXITCODE -ne 0) {
-    Write-Output 'BOOTSTRAP FAILED: installed adapters did not pass check mode.'
+    Write-Output 'BOOTSTRAP FAILED: configured platform files did not pass check mode.'
     exit 1
 }
 

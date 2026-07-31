@@ -199,7 +199,7 @@ Documentation-only work may inspect the repository, but it may modify only `docs
 
 #### Purpose
 
-Add OttoDoc's canonical documentation system and one agent-platform adapter to a repository. Installation creates the initial knowledge tree, generated navigation, platform instructions, and GitHub documentation check without silently rewriting existing documentation.
+Add OttoDoc's canonical documentation system to a repository. As part of initial setup, installation configures one agent platform and creates the initial knowledge tree, generated navigation, platform instructions, and GitHub documentation check without silently rewriting existing documentation.
 
 Open your agent interface at the root of the repository you want to document and name the platform that repository uses.
 
@@ -213,9 +213,9 @@ Use `Claude` or `Cursor` instead of `Codex` when appropriate.
 
 #### What happens
 
-Your agent retrieves the portable engine, installs the adapter for the platform you selected, creates the initial knowledge tree, generates its navigation, adds the GitHub documentation check, and verifies the result. The implementation is automated by repository-local tooling, but users do not need to invoke that tooling directly.
+Your agent retrieves the portable engine, configures the platform you selected, creates the initial knowledge tree, generates its navigation, adds the GitHub documentation check, and verifies the result. The implementation is automated by repository-local tooling, but users do not need to invoke that tooling directly.
 
-Only one platform is installed per request. OttoDoc does not guess which agent interface you use or install every integration automatically. If the repository already contains documentation that cannot be admitted safely, installation stops without rewriting, moving, or deleting it.
+Only one platform is configured per request. OttoDoc does not guess which agent interface you use or configure every integration automatically. If the repository already contains documentation that cannot be admitted safely, installation stops without rewriting, moving, or deleting it.
 
 After installation, the documentation tree begins with this structure:
 
@@ -252,7 +252,8 @@ These commands are portable across Claude, Codex, and Cursor:
 
 | Command | Purpose |
 | --- | --- |
-| `OttoDoc install` | Install OttoDoc for one agent platform |
+| `OttoDoc install` | Install the OttoDoc engine and configure its initial agent platform |
+| `OttoDoc configure` | Configure or refresh one agent platform |
 | `OttoDoc assess` | Assess a completed change for documentation impact |
 | `OttoDoc create` | Create a document of a specified kind |
 | `OttoDoc update` | Update an existing document |
@@ -265,6 +266,24 @@ These commands are portable across Claude, Codex, and Cursor:
 | `OttoDoc explain` | Explain an applicable OttoDoc rule or document choice |
 
 Command names are shown in lowercase for consistency. Follow a command with the target, scope, or instructions it needs.
+
+### `OttoDoc configure`
+
+#### Purpose
+
+Configure or refresh OttoDoc's generated discovery files for one named agent platform without installing or upgrading the OttoDoc engine itself.
+
+#### Example
+
+```text
+OttoDoc configure Codex
+```
+
+Use `Claude` or `Cursor` instead of `Codex` when appropriate.
+
+#### What happens
+
+OttoDoc generates the selected platform's adapters and the shared GitHub documentation check from the canonical templates under `docs/_system/integrations/`, then verifies that the generated files match their sources. Existing non-OttoDoc files are not overwritten.
 
 ### `OttoDoc assess`
 

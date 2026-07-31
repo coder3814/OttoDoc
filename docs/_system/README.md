@@ -13,11 +13,11 @@ This directory is the complete, portable source of truth for the documentation s
    # or: -Platform Cursor
    ```
 
-Bootstrap creates any missing kind directories, installs only the requested platform adapter plus GitHub enforcement, and generates the initial indexes. There is no automatic platform detection and no multi-platform installation mode. Installing another platform requires another explicit user request. Bootstrap does not import, move, rewrite, or delete existing documentation. A repository with pre-existing nonconforming content fails closed so that admission remains deliberate.
+Bootstrap creates any missing kind directories, configures only the requested agent platform plus GitHub enforcement, and generates the initial indexes. There is no automatic platform detection and no multi-platform configuration mode. Configuring another platform requires another explicit user request. Bootstrap does not import, move, rewrite, or delete existing documentation. A repository with pre-existing nonconforming content fails closed so that admission remains deliberate.
 
 ## Maintain an installation
 
-- After changing canonical integration templates, run `./docs/_system/scripts/install-adapters.ps1 -Platform <Claude|Codex|Cursor>` for the platform the user requested.
+- To configure or refresh an agent platform, run `./docs/_system/scripts/configure-platform.ps1 -Platform <Claude|Codex|Cursor>` for the platform the user requested.
 - To verify that platform without writing, add `-Check`.
 - Never edit generated files under `.claude/`, `.codex/agents/`, `.agents/skills/documentation/`, `.cursor/`, or `.github/workflows/docs.yml` directly.
 

@@ -157,8 +157,8 @@ The repo carries no CLAUDE.md by decision — the tree is self-describing via th
 | OKF spec | `_system/okf-spec.md` | Vendored OKF v0.2 spec (upstream: GoogleCloudPlatform/knowledge-catalog) |
 | Process definitions | `_system/process/` | Canonical workflow, coordinator, author, and reviewer behavior |
 | Templates | `_system/templates/` | One markdown skeleton per kind, frontmatter stubs included |
-| Scripts | `_system/scripts/` | Bootstrap, lint, regen, scaffold, and deterministic platform-adapter installation/checking |
+| Scripts | `_system/scripts/` | Bootstrap, lint, regen, scaffold, and deterministic agent-platform configuration/checking |
 | Integration templates | `_system/integrations/` | Portable Claude and GitHub Actions adapters copied into platform-required discovery paths |
 | Installed adapters | `.claude/` and `.github/workflows/docs.yml` | Generated copies only; never edited directly and checked for drift by CI |
 
-Every component above is engine, covered by the guard statement regardless of where the platform requires it to live. `_system/` files are plain markdown and scripts — no frontmatter, no knowledge-tree linting, and no indexing. Copying `_system/` transfers the complete portable engine. Platform installation is always an explicit user choice: `install-adapters.ps1 -Platform Claude`, `-Platform Codex`, or `-Platform Cursor`. There is no automatic detection or combined installation. Engine plus an empty tree is a complete, working documentation system.
+Every component above is engine, covered by the guard statement regardless of where the platform requires it to live. `_system/` files are plain markdown and scripts — no frontmatter, no knowledge-tree linting, and no indexing. Copying `_system/` transfers the complete portable engine. Agent-platform configuration is always an explicit user choice: `configure-platform.ps1 -Platform Claude`, `-Platform Codex`, or `-Platform Cursor`. There is no automatic detection or combined configuration. Engine plus an empty tree is a complete, working documentation system.

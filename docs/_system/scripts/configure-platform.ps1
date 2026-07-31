@@ -1,10 +1,10 @@
-# Installs one explicitly requested platform adapter from the portable documentation engine.
+# Configures one explicitly requested agent platform from the portable documentation engine.
 # Part of the engine (constitution section 9): changed only on the repository owner's explicit request.
 #
-#   install-adapters.ps1 -Platform Claude
-#   install-adapters.ps1 -Platform Codex
-#   install-adapters.ps1 -Platform Cursor
-#   install-adapters.ps1 -Platform Claude -Check
+#   configure-platform.ps1 -Platform Claude
+#   configure-platform.ps1 -Platform Codex
+#   configure-platform.ps1 -Platform Cursor
+#   configure-platform.ps1 -Platform Claude -Check
 
 [CmdletBinding()]
 param(
@@ -45,7 +45,7 @@ switch ($Platform) {
     }
 }
 
-# CI enforcement is common to every platform installation.
+# CI enforcement is common to every platform configuration.
 $adapters['integrations/github-actions/docs.yml'] = '.github/workflows/docs.yml'
 
 $drift = New-Object System.Collections.Generic.List[string]
@@ -56,7 +56,7 @@ foreach ($sourceRel in $adapters.Keys) {
     $target = Join-Path $repoRoot $targetRel
 
     if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
-        Write-Output ('ADAPTER INSTALL FAILED: canonical source missing: docs/_system/{0}' -f $sourceRel)
+        Write-Output ('PLATFORM CONFIGURATION FAILED: canonical source missing: docs/_system/{0}' -f $sourceRel)
         exit 1
     }
 
@@ -77,7 +77,7 @@ foreach ($sourceRel in $adapters.Keys) {
     if (Test-Path -LiteralPath $target -PathType Leaf) {
         $actual = [System.IO.File]::ReadAllText($target)
         if (-not (Compare-NormalizedContent $expected $actual) -and $actual -notmatch '(?i)generated[^\r\n]*adapter') {
-            Write-Output ('ADAPTER INSTALL FAILED: {0} already exists and is not a generated documentation-engine adapter. Merge the canonical pointer manually or move the existing file, then retry.' -f $targetRel)
+            Write-Output ('PLATFORM CONFIGURATION FAILED: {0} already exists and is not a generated documentation-engine adapter. Merge the canonical pointer manually or move the existing file, then retry.' -f $targetRel)
             exit 1
         }
     }
@@ -87,18 +87,18 @@ foreach ($sourceRel in $adapters.Keys) {
         New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
     }
     Write-Utf8LfFile -Path $target -Content $expected
-    Write-Output ('INSTALLED [{0}]: {1}' -f $Platform, $targetRel)
+    Write-Output ('CONFIGURED [{0}]: {1}' -f $Platform, $targetRel)
 }
 
 if ($Check) {
     if ($drift.Count -gt 0) {
         $drift | ForEach-Object { Write-Output $_ }
-        Write-Output ('ADAPTER CHECK FAILED [{0}]: {1} adapter(s) out of sync. Run install-adapters.ps1 -Platform {0}.' -f $Platform, $drift.Count)
+        Write-Output ('PLATFORM CHECK FAILED [{0}]: {1} adapter(s) out of sync. Run configure-platform.ps1 -Platform {0}.' -f $Platform, $drift.Count)
         exit 1
     }
-    Write-Output ('ADAPTER CHECK OK [{0}]: {1} adapter(s) match docs/_system.' -f $Platform, $adapters.Count)
+    Write-Output ('PLATFORM CHECK OK [{0}]: {1} adapter(s) match docs/_system.' -f $Platform, $adapters.Count)
     exit 0
 }
 
-Write-Output ('ADAPTER INSTALL OK [{0}]: {1} adapter(s) installed.' -f $Platform, $adapters.Count)
+Write-Output ('PLATFORM CONFIGURATION OK [{0}]: {1} adapter(s) configured.' -f $Platform, $adapters.Count)
 exit 0

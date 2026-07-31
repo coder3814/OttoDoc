@@ -1,4 +1,4 @@
-# Generated from docs/_system/integrations/github-actions/docs.yml by install-adapters.ps1.
+# Generated from docs/_system/integrations/github-actions/docs.yml by configure-platform.ps1.
 # Do not edit .github/workflows/docs.yml directly.
 name: docs
 
@@ -40,7 +40,7 @@ jobs:
 
       - name: Verify documentation adapters
         shell: pwsh
-        run: ./docs/_system/scripts/install-adapters.ps1 -Platform {{PLATFORM}} -Check
+        run: ./docs/_system/scripts/configure-platform.ps1 -Platform {{PLATFORM}} -Check
 
       - name: Lint the knowledge tree
         shell: pwsh

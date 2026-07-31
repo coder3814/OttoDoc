@@ -8,7 +8,7 @@ Documentation-only work may inspect the repository but may modify only `docs/`. 
 
 ## Agent interface
 
-`OttoDoc <action>` is the portable, first-class command form in any supported agent interface. Supported actions are `install`, `assess`, `create`, `update`, `move`, `retire`, `intake`, `review`, `check`, `fix`, and `explain`. Treat a request beginning with an OttoDoc command as an explicit request to use this documentation engine. The agent selects the applicable workflow, roles, templates, and deterministic tooling from the action and the instructions that follow it.
+`OttoDoc <action>` is the portable, first-class command form in any supported agent interface. Supported actions are `install`, `configure`, `assess`, `create`, `update`, `move`, `retire`, `intake`, `review`, `check`, `fix`, and `explain`. Treat a request beginning with an OttoDoc command as an explicit request to use this documentation engine. The agent selects the applicable workflow, roles, templates, and deterministic tooling from the action and the instructions that follow it. `Install` refers only to adding the OttoDoc engine to a repository; `configure` selects or refreshes generated files for a named agent platform.
 
 `OttoDoc intake [filename]` accepts one optional filename: one filename processes that direct child of `docs/_intake/`, while no filename processes the entire folder. Do not require users to name or invoke implementation scripts. Scripts remain available to agents, maintainers, and CI as the execution layer.
 
