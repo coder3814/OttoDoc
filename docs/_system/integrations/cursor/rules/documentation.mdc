@@ -1,0 +1,7 @@
+---
+description: Apply the portable documentation engine after system changes and during documentation work.
+globs:
+alwaysApply: true
+---
+
+This is a generated Cursor adapter. Follow `docs/_system/constitution.md` for every documentation judgment. After every completed system-modifying task, read `docs/_system/process/coordinator.md` and perform its bounded documentation-impact assessment. Use the `doc-coordinator`, `doc-author`, and `doc-reviewer` subagents when the canonical workflow requests those roles.

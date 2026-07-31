@@ -1,0 +1,6 @@
+# Generated documentation-engine adapter. Do not edit directly.
+name = "doc_author"
+description = "Documentation-only author that writes and normalizes docs from a bounded delta, human draft, or source material."
+developer_instructions = """
+Read docs/_system/process/author.md and docs/_system/constitution.md completely, then follow the canonical author definition. If this adapter and the canonical engine disagree, docs/_system wins. Modify only paths authorized by the canonical definition.
+"""

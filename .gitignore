@@ -1,0 +1,13 @@
+# Local operating-system and editor files
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Local agent state; installed adapters are intentionally committed only when
+# generated inside a consuming repository.
+.claude/
+.codex/
+.cursor/
+.agents/
+.github/workflows/docs.yml

@@ -1,0 +1,51 @@
+# Generated from docs/_system/integrations/github-actions/docs.yml by install-adapters.ps1.
+# Do not edit .github/workflows/docs.yml directly.
+name: docs
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - '.claude/agents/doc-*.md'
+      - '.claude/skills/doc/**'
+      - '.agents/skills/documentation/**'
+      - '.codex/agents/doc-*.toml'
+      - '.cursor/agents/doc-*.md'
+      - '.cursor/rules/documentation.mdc'
+      - '.cursor/skills/documentation/**'
+      - 'AGENTS.md'
+      - '.github/workflows/docs.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '.claude/agents/doc-*.md'
+      - '.claude/skills/doc/**'
+      - '.agents/skills/documentation/**'
+      - '.codex/agents/doc-*.toml'
+      - '.cursor/agents/doc-*.md'
+      - '.cursor/rules/documentation.mdc'
+      - '.cursor/skills/documentation/**'
+      - 'AGENTS.md'
+      - '.github/workflows/docs.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  enforce:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify documentation adapters
+        shell: pwsh
+        run: ./docs/_system/scripts/install-adapters.ps1 -Platform {{PLATFORM}} -Check
+
+      - name: Lint the knowledge tree
+        shell: pwsh
+        run: ./docs/_system/scripts/lint.ps1
+
+      - name: Verify indexes match regeneration
+        shell: pwsh
+        run: ./docs/_system/scripts/regen.ps1 -Check
