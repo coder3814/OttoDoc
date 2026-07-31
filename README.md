@@ -253,6 +253,7 @@ These commands are portable across Claude, Codex, and Cursor:
 | Command | Purpose |
 | --- | --- |
 | `OttoDoc install` | Install the OttoDoc engine and configure its initial agent platform |
+| `OttoDoc upgrade` | Replace an existing OttoDoc engine with the newest version |
 | `OttoDoc configure` | Configure or refresh one agent platform |
 | `OttoDoc assess` | Assess a completed change for documentation impact |
 | `OttoDoc create` | Create a document of a specified kind |
@@ -266,6 +267,32 @@ These commands are portable across Claude, Codex, and Cursor:
 | `OttoDoc explain` | Explain an applicable OttoDoc rule or document choice |
 
 Command names are shown in lowercase for consistency. Follow a command with the target, scope, or instructions it needs.
+
+### `OttoDoc upgrade`
+
+#### Purpose
+
+Upgrade an existing OttoDoc installation to the newest canonical engine from the OttoDoc GitHub repository. This operation is distinct from configuring an agent platform and from updating an individual document.
+
+#### Example
+
+```text
+OttoDoc upgrade
+```
+
+#### What happens
+
+Your agent identifies the configured platform and runs the repository-local upgrade tooling. OttoDoc downloads the newest engine from `https://github.com/coder3814/OttoDoc`, validates it, fully replaces `docs/_system/`, refreshes the generated files for the configured platform, regenerates navigation, and verifies the resulting installation. The previous engine and generated files are held as a temporary rollback copy until every check passes.
+
+The command leaves the upgrade as an uncommitted repository diff for review. It does not commit or push unless you request those actions separately. If the platform cannot be determined unambiguously, OttoDoc asks you to name `Claude`, `Codex`, or `Cursor` before it proceeds.
+
+Installations created before `OttoDoc upgrade` existed may not recognize the short command yet. For that one-time transition, use:
+
+```text
+OttoDoc upgrade from https://github.com/coder3814/OttoDoc
+```
+
+After that upgrade, the installed adapter recognizes the short command.
 
 ### `OttoDoc configure`
 

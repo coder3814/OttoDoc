@@ -4,11 +4,17 @@ This is the canonical process for documentation assessment, authoring, normaliza
 
 ## Authority
 
-Documentation-only work may inspect the repository but may modify only `docs/`. It never fixes code, tests, scripts, workflows, configuration, infrastructure, schemas, or deployed state. Validation is repository-only; never query live or external systems. Report implementation concerns in the task result and create no issue or findings file without separate authorization.
+Documentation-only work may inspect the repository but may modify only `docs/`. It never fixes code, tests, scripts, workflows, configuration, infrastructure, schemas, or deployed state. Validation is repository-only; never query live or external systems. Report implementation concerns in the task result and create no issue or findings file without separate authorization. The explicit lifecycle commands `install`, `upgrade`, and `configure` are the exceptions: they may retrieve the OttoDoc engine and write only its canonical engine, generated agent-platform adapters, generated indexes, and documentation-check workflow.
 
 ## Agent interface
 
-`OttoDoc <action>` is the portable, first-class command form in any supported agent interface. Supported actions are `install`, `configure`, `assess`, `create`, `update`, `move`, `retire`, `intake`, `review`, `check`, `fix`, and `explain`. Treat a request beginning with an OttoDoc command as an explicit request to use this documentation engine. The agent selects the applicable workflow, roles, templates, and deterministic tooling from the action and the instructions that follow it. `Install` refers only to adding the OttoDoc engine to a repository; `configure` selects or refreshes generated files for a named agent platform.
+`OttoDoc <action>` is the portable, first-class command form in any supported agent interface. Supported actions are `install`, `upgrade`, `configure`, `assess`, `create`, `update`, `move`, `retire`, `intake`, `review`, `check`, `fix`, and `explain`. Treat a request beginning with an OttoDoc command as an explicit request to use this documentation engine. The agent selects the applicable workflow, roles, templates, and deterministic tooling from the action and the instructions that follow it. `Install` adds the OttoDoc engine to a repository, `upgrade` replaces an installed engine with the newest canonical files, `configure` selects or refreshes generated files for a named agent platform, and `update` edits a knowledge document.
+
+### Upgrade workflow
+
+For `OttoDoc upgrade`, determine which single platform is currently configured from OttoDoc's generated adapter markers. If exactly one of Claude, Codex, or Cursor is evident, invoke `docs/_system/scripts/upgrade.ps1 -Platform <platform>` from the repository root. Ask the owner to name the platform only when it is absent or ambiguous. Do not ask the user to invoke the script.
+
+The upgrader retrieves the `main` branch of `https://github.com/coder3814/OttoDoc`, validates the archive shape, fully replaces `docs/_system/` so obsolete engine files do not survive, reconfigures the selected platform, regenerates indexes, and runs lint and drift checks. It backs up the previous engine, generated platform files, and indexes during execution and restores them if validation fails. Report the source, platform, validation result, and resulting repository diff. Do not commit or push unless the user separately requests it.
 
 `OttoDoc intake [filename]` accepts one optional filename: one filename processes that direct child of `docs/_intake/`, while no filename processes the entire folder. Do not require users to name or invoke implementation scripts. Scripts remain available to agents, maintainers, and CI as the execution layer.
 

@@ -17,6 +17,7 @@ Bootstrap creates any missing kind directories, configures only the requested ag
 
 ## Maintain an installation
 
+- Use the agent-facing `OttoDoc upgrade` command to retrieve and validate the newest engine from GitHub. Users do not need to invoke `scripts/upgrade.ps1` directly.
 - To configure or refresh an agent platform, run `./docs/_system/scripts/configure-platform.ps1 -Platform <Claude|Codex|Cursor>` for the platform the user requested.
 - To verify that platform without writing, add `-Check`.
 - Never edit generated files under `.claude/`, `.codex/agents/`, `.agents/skills/documentation/`, `.cursor/`, or `.github/workflows/docs.yml` directly.
