@@ -1,13 +1,17 @@
-# Replaces the installed OttoDoc engine with the newest files from its GitHub repository.
+# Replaces the installed OttoDoc engine with the newest files from its GitHub repository
+# and refreshes every configured agent platform.
 # This is the execution layer for the agent-facing `OttoDoc upgrade` command.
 # Compatible with Windows PowerShell 5.1 and pwsh.
+#
+#   upgrade.ps1
+#
+# There is no -Platform parameter. Upgrade refreshes the platforms the repository
+# actually has configured, read from the generated CI workflow. Naming one platform
+# could only mean "refresh just this one", which is the narrowing this replaced, or
+# "also add this one", which is configure-platform.ps1's job.
 
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)]
-    [ValidateSet('Claude', 'Codex', 'Cursor')]
-    [string]$Platform,
-
     [ValidatePattern('^https://github\.com/[^/]+/[^/]+/?$')]
     [string]$Repository = 'https://github.com/coder3814/OttoDoc',
 
@@ -19,6 +23,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
+
+. (Join-Path $PSScriptRoot 'common.ps1')
 
 $oldSystemRoot = Split-Path -Parent $PSScriptRoot
 $docsRoot = Split-Path -Parent $oldSystemRoot
@@ -35,29 +41,22 @@ $indexesBackedUp = $false
 $intakeCreated = $false
 $succeeded = $false
 
-$platformTargets = @{
-    'Claude' = @(
-        '.claude/agents/doc-coordinator.md',
-        '.claude/agents/doc-author.md',
-        '.claude/agents/doc-reviewer.md',
-        '.claude/skills/doc/SKILL.md'
-    )
-    'Codex' = @(
-        'AGENTS.md',
-        '.agents/skills/documentation/SKILL.md',
-        '.codex/agents/doc-coordinator.toml',
-        '.codex/agents/doc-author.toml',
-        '.codex/agents/doc-reviewer.toml'
-    )
-    'Cursor' = @(
-        '.cursor/rules/documentation.mdc',
-        '.cursor/skills/documentation/SKILL.md',
-        '.cursor/agents/doc-coordinator.md',
-        '.cursor/agents/doc-author.md',
-        '.cursor/agents/doc-reviewer.md'
-    )
+# The configured set is read before anything is touched. The generated workflow it comes
+# from lives outside docs/_system/, so it survives the wholesale engine replacement below.
+$configuredPlatforms = @(Get-ConfiguredPlatforms -RepoRoot $repoRoot)
+
+# Backed up broadly: every adapter path of every supported platform, both shared files,
+# and the workflow. Rollback must be able to restore a file the new engine created as
+# well as one it changed, and shared files are backed up whole because OttoDoc's block
+# inside them cannot be restored independently of the owner's surrounding content.
+$managedTargets = @()
+foreach ($platform in $Script:SupportedPlatforms) {
+    $owned = Get-PlatformOwnedPaths $platform
+    foreach ($sourceRelative in $owned.Keys) { $managedTargets += $owned[$sourceRelative] }
+    $blockTarget = Get-PlatformBlockTarget $platform
+    if ($blockTarget -ne '' -and $managedTargets -notcontains $blockTarget) { $managedTargets += $blockTarget }
 }
-$managedTargets = @($platformTargets[$Platform]) + @('.github/workflows/docs.yml')
+$managedTargets += $Script:WorkflowTarget
 
 function Copy-RelativeFile {
     param([string]$SourceRoot, [string]$RelativePath, [string]$DestinationRoot)
@@ -143,7 +142,18 @@ try {
         throw ('Downloaded archive must contain exactly one docs/_system directory; found {0}.' -f $candidates.Count)
     }
     $incomingSystem = $candidates[0].FullName
-    foreach ($required in @('constitution.md', 'process/workflow.md', 'scripts/upgrade.ps1', 'scripts/configure-platform.ps1', 'scripts/lint.ps1', 'scripts/regen.ps1', 'scripts/rename.ps1')) {
+    foreach ($required in @(
+        'constitution.md',
+        'process/workflow.md',
+        'scripts/common.ps1',
+        'scripts/upgrade.ps1',
+        'scripts/configure-platform.ps1',
+        'scripts/remove-platform.ps1',
+        'scripts/check-adapters.ps1',
+        'scripts/uninstall.ps1',
+        'scripts/lint.ps1',
+        'scripts/regen.ps1',
+        'scripts/rename.ps1')) {
         if (-not (Test-Path -LiteralPath (Join-Path $incomingSystem $required) -PathType Leaf)) {
             throw ('Downloaded engine is incomplete; missing docs/_system/{0}.' -f $required)
         }
@@ -166,6 +176,9 @@ try {
     Move-Item -LiteralPath $incomingSystem -Destination $oldSystemRoot
     $systemReplaced = $true
 
+    # Adopt the new engine's helpers for everything below this line.
+    . (Join-Path $oldSystemRoot 'scripts/common.ps1')
+
     $intakePath = Join-Path $docsRoot '_intake'
     if (-not (Test-Path -LiteralPath $intakePath)) {
         New-Item -ItemType Directory -Path $intakePath | Out-Null
@@ -174,22 +187,41 @@ try {
     }
 
     $configure = Join-Path $oldSystemRoot 'scripts/configure-platform.ps1'
+    $checkAdapters = Join-Path $oldSystemRoot 'scripts/check-adapters.ps1'
     $lint = Join-Path $oldSystemRoot 'scripts/lint.ps1'
     $regen = Join-Path $oldSystemRoot 'scripts/regen.ps1'
 
-    & $configure -Platform $Platform
-    if ($LASTEXITCODE -ne 0) { throw 'Agent-platform configuration failed.' }
+    if ($configuredPlatforms.Count -eq 0) {
+        # Zero configured platforms is an ordinary state, but the workflow still has to
+        # exist and still has to record the empty set.
+        Write-Output 'UPGRADE NOTE: no agent platform is configured; refreshing the engine, the workflow, and the indexes only.'
+        $workflowPath = Join-Path $repoRoot $Script:WorkflowTarget
+        $workflowDirectory = Split-Path -Parent $workflowPath
+        if (-not (Test-Path -LiteralPath $workflowDirectory)) {
+            New-Item -ItemType Directory -Path $workflowDirectory -Force | Out-Null
+        }
+        Write-Utf8LfFile -Path $workflowPath -Content (Get-GeneratedWorkflow -SystemRoot $oldSystemRoot -Platforms @())
+    }
+    else {
+        foreach ($platform in $configuredPlatforms) {
+            & $configure -Platform $platform
+            if ($LASTEXITCODE -ne 0) { throw ('Agent-platform configuration failed for {0}.' -f $platform) }
+        }
+    }
+
     & $lint
     if ($LASTEXITCODE -ne 0) { throw 'Knowledge-tree lint failed under the new engine.' }
     & $regen
     if ($LASTEXITCODE -ne 0) { throw 'Index regeneration failed under the new engine.' }
-    & $configure -Platform $Platform -Check
+    & $checkAdapters
     if ($LASTEXITCODE -ne 0) { throw 'Agent-platform verification failed under the new engine.' }
     & $regen -Check
     if ($LASTEXITCODE -ne 0) { throw 'Generated-index verification failed under the new engine.' }
 
     $succeeded = $true
-    Write-Output ('UPGRADE OK: OttoDoc refreshed from {0} at ref {1}; platform {2} configured and verified.' -f $Repository, $Ref, $Platform)
+    $setDescription = '(none)'
+    if ($configuredPlatforms.Count -gt 0) { $setDescription = ($configuredPlatforms -join ', ') }
+    Write-Output ('UPGRADE OK: OttoDoc refreshed from {0} at ref {1}; configured platforms {2} refreshed and verified.' -f $Repository, $Ref, $setDescription)
 }
 catch {
     $upgradeError = $_.Exception.Message

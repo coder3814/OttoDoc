@@ -8,7 +8,7 @@
 
 **Structured knowledge · Automatic indexes · Agent workflows · Portable Markdown**
 
-[Why OttoDoc](#the-problem) · [How it works](#what-ottodoc-changes) · [Install](#install-ottodoc) · [Upgrade](#upgrade-an-existing-installation) · [Commands](#ottodoc-command-reference)
+[Why OttoDoc](#the-problem) · [How it works](#what-ottodoc-changes) · [Install](#install-ottodoc) · [Upgrade](#upgrade-an-existing-installation) · [Add a platform](#add-an-agent-platform-to-an-existing-installation) · [Commands](#ottodoc-command-reference)
 
 OttoDoc is a portable, repository-local documentation system for software teams working with humans and coding agents. It gives documentation a defined structure, a repeatable authoring and review process, mechanical quality checks, and adapters that teach supported agents how to follow the same rules.
 
@@ -215,7 +215,9 @@ Use `Claude` or `Cursor` instead of `Codex` when appropriate.
 
 Your agent retrieves the portable engine, configures the platform you selected, creates the initial knowledge tree, generates its navigation, adds the GitHub documentation check, and verifies the result. The implementation is automated by repository-local tooling, but users do not need to invoke that tooling directly.
 
-Only one platform is configured per request. OttoDoc does not guess which agent interface you use or configure every integration automatically. If the repository already contains documentation that cannot be admitted safely, installation stops without rewriting, moving, or deleting it.
+Only one platform is configured per request. OttoDoc does not guess which agent interface you use or configure every integration automatically. Adding more platforms later is a separate, additive request — see [Add an agent platform](#add-an-agent-platform-to-an-existing-installation).
+
+If the repository already contains documentation that cannot be admitted safely, installation stops without rewriting, moving, or deleting it. The same gate applies when you reinstall after uninstalling: documents written by hand in the meantime, without OttoDoc's frontmatter, will fail the check and installation will refuse rather than modify them. Nothing is lost — the engine is on disk by then, so run `OttoDoc check` to see exactly what needs fixing, then install again.
 
 After installation, the documentation tree begins with this structure:
 
@@ -263,9 +265,11 @@ OttoDoc upgrade
 
 #### What happens
 
-Your agent identifies the configured platform and runs the repository-local upgrade tooling. OttoDoc downloads the newest engine from `https://github.com/coder3814/OttoDoc`, validates it, fully replaces `docs/_system/`, refreshes the generated files for the configured platform, regenerates navigation, and verifies the resulting installation. The previous engine and generated files are held as a temporary rollback copy until every check passes.
+Your agent runs the repository-local upgrade tooling. OttoDoc downloads the newest engine from `https://github.com/coder3814/OttoDoc`, validates it, fully replaces `docs/_system/`, refreshes the generated files for **every** configured platform, regenerates navigation, and verifies the resulting installation. The previous engine and generated files are held as a temporary rollback copy until every check passes.
 
-The command leaves the upgrade as an uncommitted repository diff for review. It does not commit or push unless you request those actions separately. If the platform cannot be determined unambiguously, OttoDoc asks you to name `Claude`, `Codex`, or `Cursor` before it proceeds.
+You are not asked which platform is configured. Which platforms an installation has is a fact about the repository, and OttoDoc reads it rather than guessing — so a repository configured for both Codex and Claude gets both refreshed, and one with no platform configured still gets its engine and navigation refreshed.
+
+The command leaves the upgrade as an uncommitted repository diff for review. It does not commit or push unless you request those actions separately.
 
 Installations created before `OttoDoc upgrade` existed may not recognize the short command yet. For that one-time transition, use:
 
@@ -275,7 +279,31 @@ OttoDoc upgrade from https://github.com/coder3814/OttoDoc
 
 After that upgrade, the installed adapter recognizes the short command.
 
+One note about that first upgrade specifically: it is driven by the older upgrade tooling already on disk, which does not know about `AGENTS.md` and `CLAUDE.md`. In the unlikely event that the first upgrade fails partway and rolls back, those two files are the only ones not restored automatically — check them against `git diff` before retrying. Every upgrade after the first restores everything.
+
 Review and commit the upgrade diff after verification succeeds.
+
+---
+
+## Add an agent platform to an existing installation
+
+OttoDoc configures one agent platform at install time. When a teammate opens a different tool in the same repository — or you start using one yourself — that tool has no OttoDoc adapters yet and will not follow the documentation contract until you add it.
+
+Open the new agent interface at the repository root and paste:
+
+```text
+OttoDoc configure Claude
+```
+
+Use `Codex` or `Cursor` instead of `Claude` as appropriate. If that agent does not recognize the command, give it the engine's location the same way `install` does:
+
+```text
+OttoDoc configure Claude from https://github.com/coder3814/OttoDoc
+```
+
+Adding a platform is additive. Platforms already configured are left exactly as they are, and the CI documentation check begins verifying the new one alongside them.
+
+Until someone runs this, an agent on an unconfigured platform is simply unaware of OttoDoc — but enforcement does not depend on it. CI runs the same lint, index, and adapter checks on every change to `docs/` regardless of which tool wrote it, so documentation written past the contract fails the build rather than landing silently.
 
 ---
 
@@ -288,8 +316,10 @@ These commands are portable across Claude, Codex, and Cursor:
 | Command | Purpose |
 | --- | --- |
 | `OttoDoc install` | Install the OttoDoc engine and configure its initial agent platform |
-| `OttoDoc upgrade` | Replace an existing OttoDoc engine with the newest version |
-| `OttoDoc configure` | Configure or refresh one agent platform |
+| `OttoDoc upgrade` | Replace an existing OttoDoc engine with the newest version and refresh every configured platform |
+| `OttoDoc configure` | Add or refresh one agent platform, leaving the others untouched |
+| `OttoDoc remove` | Decommission one named agent platform |
+| `OttoDoc uninstall` | Remove the engine and every agent platform, keeping the documentation |
 | `OttoDoc assess` | Assess a completed change for documentation impact |
 | `OttoDoc create` | Create a document of a specified kind |
 | `OttoDoc update` | Update an existing document |
@@ -308,7 +338,7 @@ Command names are shown in lowercase for consistency. Follow a command with the 
 
 #### Purpose
 
-Configure or refresh OttoDoc's generated discovery files for one named agent platform without installing or upgrading the OttoDoc engine itself.
+Add one named agent platform to an existing installation, or refresh it, without installing or upgrading the OttoDoc engine itself.
 
 #### Example
 
@@ -320,7 +350,59 @@ Use `Claude` or `Cursor` instead of `Codex` when appropriate.
 
 #### What happens
 
-OttoDoc generates the selected platform's adapters and the shared GitHub documentation check from the canonical templates under `docs/_system/integrations/`, then verifies that the generated files match their sources. Existing non-OttoDoc files are not overwritten.
+OttoDoc generates the selected platform's adapters and the shared GitHub documentation check from the canonical templates under `docs/_system/integrations/`, then verifies that the generated files match their sources. The command is additive: any platform already configured stays configured and untouched.
+
+Two files are shared rather than owned. Codex needs an `AGENTS.md` and Claude a `CLAUDE.md`, and those files usually already exist and belong to you. OttoDoc contributes a single delimited block to them:
+
+```text
+<!-- ottodoc:begin - generated by OttoDoc. Do not edit inside these markers. -->
+...
+<!-- ottodoc:end -->
+```
+
+Everything outside those markers is yours and is never read, rewritten, or reformatted. If the file does not exist, OttoDoc creates it containing just the block. Edit inside the markers and the documentation check will report it as drift.
+
+### `OttoDoc remove`
+
+#### Purpose
+
+Decommission one named agent platform. Use it when a repository stops using a tool, or to clean up adapters left behind by an earlier installation.
+
+#### Example
+
+```text
+OttoDoc remove Cursor
+```
+
+#### What happens
+
+OttoDoc deletes that platform's generated adapters, strips its block from any shared file — deleting the file only if the block was all it contained — and rewrites the CI documentation check so it no longer verifies that platform. Every other platform is untouched.
+
+The platform name is always required. `OttoDoc remove` on its own is not a request to remove everything; OttoDoc asks which platform you mean.
+
+Removing your only configured platform is allowed and does not trigger anything further. OttoDoc stays installed with zero configured platforms: the engine is still on disk, CI still lints the tree and checks the indexes, and you can add a platform back at any time with `OttoDoc configure`.
+
+A file sitting at one of OttoDoc's paths that does not match the canonical engine was not written by OttoDoc, so it is reported rather than deleted. Remove those by hand if you want them gone.
+
+### `OttoDoc uninstall`
+
+#### Purpose
+
+Remove OttoDoc entirely from a repository while keeping every document it helped you write.
+
+#### Example
+
+```text
+OttoDoc uninstall
+```
+
+#### What happens
+
+Your agent confirms with you first, then removes `docs/_system/`, the GitHub documentation check, the adapters for every supported platform, OttoDoc's block from `AGENTS.md` and `CLAUDE.md`, and the governance line at the top of `docs/index.md` so it no longer links to a constitution that is gone.
+
+Everything else stays: every document, every generated index, every asset, and `docs/_intake/` with its contents. The result is left as an uncommitted diff for review — git is the undo.
+
+Because the tree is still conformant afterward, reinstalling restores it exactly. Indexes are regenerated from the documents themselves, so they come back byte-for-byte identical, governance line included.
 
 ### `OttoDoc assess`
 

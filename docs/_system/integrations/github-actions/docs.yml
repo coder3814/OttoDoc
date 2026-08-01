@@ -1,7 +1,15 @@
-# Generated from docs/_system/integrations/github-actions/docs.yml by configure-platform.ps1.
+# Generated from docs/_system/integrations/github-actions/docs.yml by OttoDoc.
 # Do not edit .github/workflows/docs.yml directly.
+#
+# The line below is the record of which agent platforms are configured. OttoDoc reads
+# it back to know what to refresh, verify, and remove; editing it by hand desynchronizes
+# the installation and fails the adapter check.
+# ottodoc-platforms: {{PLATFORMS}}
 name: docs
 
+# The path filters below deliberately cover every supported platform, not only the
+# configured ones, so that an adapter belonging to an unconfigured platform still
+# triggers the check that reports it as an orphan.
 on:
   pull_request:
     paths:
@@ -14,6 +22,7 @@ on:
       - '.cursor/rules/documentation.mdc'
       - '.cursor/skills/documentation/**'
       - 'AGENTS.md'
+      - 'CLAUDE.md'
       - '.github/workflows/docs.yml'
   push:
     branches: [main]
@@ -27,6 +36,7 @@ on:
       - '.cursor/rules/documentation.mdc'
       - '.cursor/skills/documentation/**'
       - 'AGENTS.md'
+      - 'CLAUDE.md'
       - '.github/workflows/docs.yml'
 
 permissions:
@@ -40,7 +50,7 @@ jobs:
 
       - name: Verify documentation adapters
         shell: pwsh
-        run: ./docs/_system/scripts/configure-platform.ps1 -Platform {{PLATFORM}} -Check
+        run: ./docs/_system/scripts/check-adapters.ps1
 
       - name: Lint the knowledge tree
         shell: pwsh

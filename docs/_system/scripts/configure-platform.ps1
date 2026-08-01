@@ -1,10 +1,13 @@
-# Configures one explicitly requested agent platform from the portable documentation engine.
+# Adds one explicitly requested agent platform to the configured set, or refreshes it.
 # Part of the engine (constitution section 9): changed only on the repository owner's explicit request.
+# Compatible with Windows PowerShell 5.1 and pwsh.
 #
 #   configure-platform.ps1 -Platform Claude
 #   configure-platform.ps1 -Platform Codex
 #   configure-platform.ps1 -Platform Cursor
-#   configure-platform.ps1 -Platform Claude -Check
+#
+# Additive by design: platforms already configured are left exactly as they are.
+# Removal is remove-platform.ps1; verification is check-adapters.ps1.
 
 [CmdletBinding()]
 param(
@@ -12,93 +15,82 @@ param(
     [ValidateSet('Claude', 'Codex', 'Cursor')]
     [string]$Platform,
 
+    # Deprecated compatibility shim. Verification moved to check-adapters.ps1, which
+    # takes no arguments because its scope is installed state rather than a caller's
+    # choice. This switch survives only because upgrade.ps1 and bootstrap.ps1 copies
+    # already installed in the field call it, and an upgrade that fails here rolls back
+    # and strands the installation on the old engine. Removable once those have moved.
     [switch]$Check
 )
 
 . (Join-Path $PSScriptRoot 'common.ps1')
 
-$docsRoot = Get-DocsRoot
-$repoRoot = Split-Path -Parent $docsRoot
-$systemRoot = Split-Path -Parent $PSScriptRoot
-
-$adapters = [ordered]@{}
-switch ($Platform) {
-    'Claude' {
-        $adapters['integrations/claude/agents/doc-coordinator.md'] = '.claude/agents/doc-coordinator.md'
-        $adapters['integrations/claude/agents/doc-author.md']      = '.claude/agents/doc-author.md'
-        $adapters['integrations/claude/agents/doc-reviewer.md']    = '.claude/agents/doc-reviewer.md'
-        $adapters['integrations/claude/skills/doc/SKILL.md']       = '.claude/skills/doc/SKILL.md'
-    }
-    'Codex' {
-        $adapters['integrations/codex/AGENTS.md']                    = 'AGENTS.md'
-        $adapters['integrations/codex/skills/documentation/SKILL.md'] = '.agents/skills/documentation/SKILL.md'
-        $adapters['integrations/codex/agents/doc-coordinator.toml'] = '.codex/agents/doc-coordinator.toml'
-        $adapters['integrations/codex/agents/doc-author.toml']      = '.codex/agents/doc-author.toml'
-        $adapters['integrations/codex/agents/doc-reviewer.toml']    = '.codex/agents/doc-reviewer.toml'
-    }
-    'Cursor' {
-        $adapters['integrations/cursor/rules/documentation.mdc']     = '.cursor/rules/documentation.mdc'
-        $adapters['integrations/cursor/skills/documentation/SKILL.md'] = '.cursor/skills/documentation/SKILL.md'
-        $adapters['integrations/cursor/agents/doc-coordinator.md']  = '.cursor/agents/doc-coordinator.md'
-        $adapters['integrations/cursor/agents/doc-author.md']       = '.cursor/agents/doc-author.md'
-        $adapters['integrations/cursor/agents/doc-reviewer.md']     = '.cursor/agents/doc-reviewer.md'
-    }
-}
-
-# CI enforcement is common to every platform configuration.
-$adapters['integrations/github-actions/docs.yml'] = '.github/workflows/docs.yml'
-
-$drift = New-Object System.Collections.Generic.List[string]
-
-foreach ($sourceRel in $adapters.Keys) {
-    $targetRel = $adapters[$sourceRel]
-    $source = Join-Path $systemRoot $sourceRel
-    $target = Join-Path $repoRoot $targetRel
-
-    if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
-        Write-Output ('PLATFORM CONFIGURATION FAILED: canonical source missing: docs/_system/{0}' -f $sourceRel)
-        exit 1
-    }
-
-    $expected = [System.IO.File]::ReadAllText($source).Replace("`r`n", "`n").Replace('{{PLATFORM}}', $Platform)
-
-    if ($Check) {
-        if (-not (Test-Path -LiteralPath $target -PathType Leaf)) {
-            $drift.Add(('{0}: missing' -f $targetRel))
-            continue
-        }
-        $actual = [System.IO.File]::ReadAllText($target)
-        if (-not (Compare-NormalizedContent $expected $actual)) {
-            $drift.Add(('{0}: stale' -f $targetRel))
-        }
-        continue
-    }
-
-    if (Test-Path -LiteralPath $target -PathType Leaf) {
-        $actual = [System.IO.File]::ReadAllText($target)
-        if (-not (Compare-NormalizedContent $expected $actual) -and $actual -notmatch '(?i)generated[^\r\n]*adapter') {
-            Write-Output ('PLATFORM CONFIGURATION FAILED: {0} already exists and is not a generated documentation-engine adapter. Merge the canonical pointer manually or move the existing file, then retry.' -f $targetRel)
-            exit 1
-        }
-    }
-
-    $targetDir = Split-Path -Parent $target
-    if (-not (Test-Path -LiteralPath $targetDir)) {
-        New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
-    }
-    Write-Utf8LfFile -Path $target -Content $expected
-    Write-Output ('CONFIGURED [{0}]: {1}' -f $Platform, $targetRel)
-}
-
 if ($Check) {
-    if ($drift.Count -gt 0) {
-        $drift | ForEach-Object { Write-Output $_ }
-        Write-Output ('PLATFORM CHECK FAILED [{0}]: {1} adapter(s) out of sync. Run configure-platform.ps1 -Platform {0}.' -f $Platform, $drift.Count)
-        exit 1
-    }
-    Write-Output ('PLATFORM CHECK OK [{0}]: {1} adapter(s) match docs/_system.' -f $Platform, $adapters.Count)
-    exit 0
+    & (Join-Path $PSScriptRoot 'check-adapters.ps1')
+    exit $LASTEXITCODE
 }
 
-Write-Output ('PLATFORM CONFIGURATION OK [{0}]: {1} adapter(s) configured.' -f $Platform, $adapters.Count)
+$repoRoot = Get-RepoRoot
+$systemRoot = Get-SystemRoot
+
+$configured = @(Get-ConfiguredPlatforms -RepoRoot $repoRoot)
+$target = @(Select-OrderedPlatforms (@($configured) + @($Platform)))
+
+$written = @()
+$replaced = @()
+
+try {
+    $owned = Get-PlatformOwnedPaths $Platform
+    foreach ($sourceRelative in $owned.Keys) {
+        $targetRelative = $owned[$sourceRelative]
+        $targetPath = Join-Path $repoRoot $targetRelative
+        $expected = Get-CanonicalAdapter -SystemRoot $systemRoot -SourceRelative $sourceRelative
+
+        # Configuring a platform is an explicit instruction to install its adapters at
+        # OttoDoc's own paths, so a differing file there is replaced rather than refused -
+        # that is also what makes refresh during upgrade work, where every installed
+        # adapter is stale against new canon by definition. The replacement is reported
+        # and left as an uncommitted diff; git is the undo.
+        if (Test-Path -LiteralPath $targetPath -PathType Leaf) {
+            $actual = [System.IO.File]::ReadAllText($targetPath)
+            if (-not (Compare-NormalizedContent $expected $actual)) { $replaced += $targetRelative }
+        }
+
+        $targetDirectory = Split-Path -Parent $targetPath
+        if (-not (Test-Path -LiteralPath $targetDirectory)) {
+            New-Item -ItemType Directory -Path $targetDirectory -Force | Out-Null
+        }
+        Write-Utf8LfFile -Path $targetPath -Content $expected
+        $written += $targetRelative
+    }
+
+    $blockTarget = Get-PlatformBlockTarget $Platform
+    if ($blockTarget -ne '') {
+        $blockPath = Join-Path $repoRoot $blockTarget
+        $block = Get-CanonicalAdapter -SystemRoot $systemRoot -SourceRelative (Get-PlatformBlockSource $Platform)
+        $style = Get-SharedFileStyle -Path $blockPath
+        $existing = ''
+        if (Test-Path -LiteralPath $blockPath -PathType Leaf) {
+            $existing = Remove-LegacyWholeFileAdapter -Content ([System.IO.File]::ReadAllText($blockPath))
+        }
+        Write-SharedFile -Path $blockPath -Content (Set-OttodocBlock -Content $existing -Block $block) -Style $style
+        $written += ('{0} (OttoDoc block only)' -f $blockTarget)
+    }
+
+    $workflowPath = Join-Path $repoRoot $Script:WorkflowTarget
+    $workflowDirectory = Split-Path -Parent $workflowPath
+    if (-not (Test-Path -LiteralPath $workflowDirectory)) {
+        New-Item -ItemType Directory -Path $workflowDirectory -Force | Out-Null
+    }
+    Write-Utf8LfFile -Path $workflowPath -Content (Get-GeneratedWorkflow -SystemRoot $systemRoot -Platforms $target)
+    $written += $Script:WorkflowTarget
+}
+catch {
+    Write-Output ('PLATFORM CONFIGURATION FAILED: {0}' -f $_.Exception.Message)
+    exit 1
+}
+
+foreach ($item in $written) { Write-Output ('CONFIGURED [{0}]: {1}' -f $Platform, $item) }
+foreach ($item in $replaced) { Write-Output ('REPLACED: {0} did not match canon and was regenerated.' -f $item) }
+Write-Output ('PLATFORM CONFIGURATION OK [{0}]: configured set is now {1}.' -f $Platform, ($target -join ', '))
 exit 0

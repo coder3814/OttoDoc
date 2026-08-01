@@ -39,9 +39,9 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-& (Join-Path $PSScriptRoot 'configure-platform.ps1') -Platform $Platform -Check
+& (Join-Path $PSScriptRoot 'check-adapters.ps1')
 if ($LASTEXITCODE -ne 0) {
-    Write-Output 'BOOTSTRAP FAILED: configured platform files did not pass check mode.'
+    Write-Output 'BOOTSTRAP FAILED: configured platform files did not pass the adapter check.'
     exit 1
 }
 
