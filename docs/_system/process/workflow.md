@@ -28,7 +28,9 @@ This command frequently arrives from an agent with no prior OttoDoc context — 
 
 `OttoDoc uninstall` removes the engine and every platform: `docs/_system/scripts/uninstall.ps1`. Confirm with the owner before invoking it, and say plainly what it does — every document, index, asset, and `docs/_intake/` is preserved, while `docs/_system/`, the workflow, every adapter, and the root index's governance pointer are removed. The script itself is non-interactive so that other commands and CI may call it.
 
-Both commands delete a file at a known adapter path only when its content matches the canonical engine, and report anything that does not instead of touching it. Pass those skipped files on to the owner rather than removing them by hand. Both leave the result as an uncommitted diff for review; do not commit or push unless the user separately requests it.
+If `upgrade` reports orphaned adapters - files belonging to a platform that is not in the configured set - relay them to the owner with both options: configure that platform to adopt it, or remove it to delete the files. Do not choose on their behalf; which platforms a repository should support is owner intent, and §9 forbids guessing it. The upgrade itself still succeeds, and the CI documentation check keeps failing until the owner resolves it.
+
+Both `remove` and `uninstall` delete a file at a known adapter path only when its content matches the canonical engine, and report anything that does not instead of touching it. Pass those skipped files on to the owner rather than removing them by hand. Both leave the result as an uncommitted diff for review; do not commit or push unless the user separately requests it.
 
 `OttoDoc intake [filename]` accepts one optional filename: one filename processes that direct child of `docs/_intake/`, while no filename processes the entire folder. Do not require users to name or invoke implementation scripts. Scripts remain available to agents, maintainers, and CI as the execution layer.
 

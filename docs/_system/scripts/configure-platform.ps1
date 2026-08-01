@@ -6,8 +6,9 @@
 #   configure-platform.ps1 -Platform Codex
 #   configure-platform.ps1 -Platform Cursor
 #
-# Additive by design: platforms already configured are left exactly as they are.
-# Removal is remove-platform.ps1; verification is check-adapters.ps1.
+# Additive by design: adding one platform never removes another. Every platform in the
+# resulting set is written, so the workflow's record of that set and the files on disk
+# cannot disagree. Removal is remove-platform.ps1; verification is check-adapters.ps1.
 
 [CmdletBinding()]
 param(
@@ -26,7 +27,13 @@ param(
 . (Join-Path $PSScriptRoot 'common.ps1')
 
 if ($Check) {
-    & (Join-Path $PSScriptRoot 'check-adapters.ps1')
+    # Orphans are warnings here for the same reason upgrade treats them that way: the
+    # only callers of this switch are bootstrap and upgrade copies already installed in
+    # the field, verifying work they just did. An orphan is neither theirs nor
+    # resolvable without guessing, and failing on one would roll a transition upgrade
+    # back and strand the repository on the old engine. CI calls check-adapters.ps1
+    # directly and without the switch, so orphans still fail the build.
+    & (Join-Path $PSScriptRoot 'check-adapters.ps1') -WarnOnOrphans
     exit $LASTEXITCODE
 }
 
@@ -40,34 +47,41 @@ $written = @()
 $replaced = @()
 
 try {
-    $owned = Get-PlatformOwnedPaths $Platform
-    foreach ($sourceRelative in $owned.Keys) {
-        $targetRelative = $owned[$sourceRelative]
-        $targetPath = Join-Path $repoRoot $targetRelative
-        $expected = Get-CanonicalAdapter -SystemRoot $systemRoot -SourceRelative $sourceRelative
+    # Every platform in the resulting set is written, not only the newly named one. The
+    # workflow records that set and check-adapters holds the installation to it, so a
+    # platform named in the record whose files are absent or stale is a broken
+    # installation that fails its own check. Writing the whole set keeps record and
+    # reality in step; for platforms that were already correct the write is a no-op.
+    foreach ($current in $target) {
+        $owned = Get-PlatformOwnedPaths $current
+        foreach ($sourceRelative in $owned.Keys) {
+            $targetRelative = $owned[$sourceRelative]
+            $targetPath = Join-Path $repoRoot $targetRelative
+            $expected = Get-CanonicalAdapter -SystemRoot $systemRoot -SourceRelative $sourceRelative
 
-        # Configuring a platform is an explicit instruction to install its adapters at
-        # OttoDoc's own paths, so a differing file there is replaced rather than refused -
-        # that is also what makes refresh during upgrade work, where every installed
-        # adapter is stale against new canon by definition. The replacement is reported
-        # and left as an uncommitted diff; git is the undo.
-        if (Test-Path -LiteralPath $targetPath -PathType Leaf) {
-            $actual = [System.IO.File]::ReadAllText($targetPath)
-            if (-not (Compare-NormalizedContent $expected $actual)) { $replaced += $targetRelative }
+            # Configuring a platform is an explicit instruction to install its adapters at
+            # OttoDoc's own paths, so a differing file there is replaced rather than
+            # refused - that is also what makes refresh during upgrade work, where every
+            # installed adapter is stale against new canon by definition. The replacement
+            # is reported and left as an uncommitted diff; git is the undo.
+            if (Test-Path -LiteralPath $targetPath -PathType Leaf) {
+                $actual = [System.IO.File]::ReadAllText($targetPath)
+                if (-not (Compare-NormalizedContent $expected $actual)) { $replaced += $targetRelative }
+            }
+
+            $targetDirectory = Split-Path -Parent $targetPath
+            if (-not (Test-Path -LiteralPath $targetDirectory)) {
+                New-Item -ItemType Directory -Path $targetDirectory -Force | Out-Null
+            }
+            Write-Utf8LfFile -Path $targetPath -Content $expected
+            $written += $targetRelative
         }
 
-        $targetDirectory = Split-Path -Parent $targetPath
-        if (-not (Test-Path -LiteralPath $targetDirectory)) {
-            New-Item -ItemType Directory -Path $targetDirectory -Force | Out-Null
-        }
-        Write-Utf8LfFile -Path $targetPath -Content $expected
-        $written += $targetRelative
-    }
+        $blockTarget = Get-PlatformBlockTarget $current
+        if ($blockTarget -eq '') { continue }
 
-    $blockTarget = Get-PlatformBlockTarget $Platform
-    if ($blockTarget -ne '') {
         $blockPath = Join-Path $repoRoot $blockTarget
-        $block = Get-CanonicalAdapter -SystemRoot $systemRoot -SourceRelative (Get-PlatformBlockSource $Platform)
+        $block = Get-CanonicalAdapter -SystemRoot $systemRoot -SourceRelative (Get-PlatformBlockSource $current)
         $style = Get-SharedFileStyle -Path $blockPath
         $existing = ''
         if (Test-Path -LiteralPath $blockPath -PathType Leaf) {
@@ -90,7 +104,7 @@ catch {
     exit 1
 }
 
-foreach ($item in $written) { Write-Output ('CONFIGURED [{0}]: {1}' -f $Platform, $item) }
+foreach ($item in $written) { Write-Output ('CONFIGURED: {0}' -f $item) }
 foreach ($item in $replaced) { Write-Output ('REPLACED: {0} did not match canon and was regenerated.' -f $item) }
 Write-Output ('PLATFORM CONFIGURATION OK [{0}]: configured set is now {1}.' -f $Platform, ($target -join ', '))
 exit 0

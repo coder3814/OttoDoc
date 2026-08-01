@@ -431,6 +431,26 @@ marker it wrote on line 1 is proof it owned the entire file. On the first upgrad
 content is dropped and replaced by the block. Without this, every Codex installation in
 the field would carry the old instructions duplicated above its new block permanently.
 
+**`configure` writes every platform in the resulting set, not only the named one.** The
+workflow records the set and `check-adapters.ps1` holds the installation to that record,
+so writing only the named platform could leave a recorded platform whose files are absent
+or stale - an installation that fails its own check immediately after configuring. This
+bit hardest on the `CLAUDE.md` block, which no prior installation has. Writing the whole
+set is a no-op for platforms already correct, and it keeps record and reality in step.
+
+**Orphaned adapters are reported by `upgrade`, not fatal to it.** The pre-additive
+`configure` is worse than the original gap report credited: adding a second platform
+writes that platform's adapter files, then hits `.github/workflows/docs.yml` and refuses,
+because its ownership test looked for the words "generated" and "adapter" on one line and
+the workflow header has no such line. It exits non-zero with the new platform's files on
+disk and the workflow still recording only the first platform. Those files are orphans
+under the new rule, so a fatal orphan check would roll the upgrade back and strand exactly
+the repositories that most need it. `check-adapters.ps1 -WarnOnOrphans` reports them
+instead; `upgrade` and the deprecated `-Check` shim pass it, CI does not. The owner is
+told both ways out - configure that platform to adopt it, or remove it to delete the
+files - and OttoDoc chooses neither, because which platforms a repository should support
+is owner intent and §9 forbids guessing it.
+
 One bug was fixed in stride: `Get-DocsRoot` resolved its path with a `'..\..'` literal,
 where a backslash is an ordinary filename character on Linux - the platform CI runs these
 scripts on. It now uses two `Join-Path` hops.
@@ -473,6 +493,15 @@ second, steady-state upgrade with no `-Platform`, confirming both configured pla
 refreshed rather than narrowed to one, and that the owner's `CLAUDE.md` content survives
 the Claude block being added to it.
 
-Not covered by either suite: behavior on Linux under `pwsh`, which is where CI runs. The
+**Stranded adapters.** A repository where the pre-additive `configure` was used to add a
+second platform - so its files are on disk but the workflow records only the first.
+Confirms the old command really does fail that way, that the upgrade now completes and
+reports the orphans rather than rolling back, that the orphaned files are neither swept
+nor adopted silently, that a plain `check-adapters.ps1` still fails on them afterward with
+both remedies named, and that either remedy resolves it: configuring the orphaned platform
+adopts its files and records both, removing it deletes them, and in each case the other
+platform is untouched.
+
+Not covered by any suite: behavior on Linux under `pwsh`, which is where CI runs. The
 `Get-DocsRoot` fix in §10a was found by reading rather than by testing, and no Linux
 runner was available here.

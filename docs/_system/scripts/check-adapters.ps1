@@ -3,15 +3,28 @@
 # Compatible with Windows PowerShell 5.1 and pwsh.
 #
 #   check-adapters.ps1
+#   check-adapters.ps1 -WarnOnOrphans
 #
-# Takes no arguments on purpose. The invariant it enforces is a single statement -
+# Takes no platform argument on purpose. The invariant it enforces is a single statement -
 # every adapter file on disk belongs to a configured platform and matches canon - and
 # its scope is defined by installed state rather than by a caller. That is also what
 # makes the zero-platform case ordinary rather than special: with nothing configured,
 # every adapter file on disk is an orphan by the same rule, with no branch for it.
 
 [CmdletBinding()]
-param()
+param(
+    # Report adapters belonging to no configured platform without failing on them.
+    #
+    # Only upgrade passes this. An orphan is pre-existing state that upgrade did not
+    # create and cannot resolve without guessing which platforms the owner wants, which
+    # section 9 forbids - and failing on it would roll the upgrade back and strand the
+    # repository on the old engine permanently. Repositories that hit the pre-additive
+    # `configure` bug, which wrote a second platform's adapters and then failed before
+    # recording it, are exactly the ones in this state and exactly the ones needing the
+    # upgrade most. CI never passes this switch, so the orphan still fails the build; the
+    # owner just gets to choose between configuring that platform and removing it.
+    [switch]$WarnOnOrphans
+)
 
 . (Join-Path $PSScriptRoot 'common.ps1')
 
@@ -28,6 +41,7 @@ trap {
 }
 
 $findings = New-Object System.Collections.Generic.List[string]
+$orphans = New-Object System.Collections.Generic.List[string]
 $verified = 0
 
 $configured = @(Get-ConfiguredPlatforms -RepoRoot $repoRoot)
@@ -56,7 +70,7 @@ foreach ($platform in $Script:SupportedPlatforms) {
 
         if (-not $isConfigured) {
             if ($present) {
-                $findings.Add(('{0}: orphan ({1} is not configured)' -f $targetRelative, $platform))
+                $orphans.Add(('{0}: orphan ({1} is not configured)' -f $targetRelative, $platform))
             }
             continue
         }
@@ -92,7 +106,7 @@ foreach ($platform in $Script:SupportedPlatforms) {
 
     if (-not $isConfigured) {
         if ($installedBlock -ne '') {
-            $findings.Add(('{0}: orphan OttoDoc block ({1} is not configured)' -f $blockTarget, $platform))
+            $orphans.Add(('{0}: orphan OttoDoc block ({1} is not configured)' -f $blockTarget, $platform))
         }
         continue
     }
@@ -111,10 +125,24 @@ foreach ($platform in $Script:SupportedPlatforms) {
 $setDescription = '(none)'
 if ($configured.Count -gt 0) { $setDescription = ($configured -join ', ') }
 
-if ($findings.Count -gt 0) {
-    $findings | ForEach-Object { Write-Output $_ }
-    Write-Output ('ADAPTER CHECK FAILED [{0}]: {1} problem(s). Run configure-platform.ps1 to refresh a platform, or remove-platform.ps1 to decommission one.' -f $setDescription, $findings.Count)
+$findings | ForEach-Object { Write-Output $_ }
+
+if ($orphans.Count -gt 0) {
+    $orphans | ForEach-Object { Write-Output $_ }
+    Write-Output 'Those adapter files belong to a platform that is not in the configured set. Run configure-platform.ps1 -Platform <name> to adopt that platform, or remove-platform.ps1 -Platform <name> to delete its files. OttoDoc will not choose for you.'
+}
+
+$problems = $findings.Count
+if (-not $WarnOnOrphans) { $problems += $orphans.Count }
+
+if ($problems -gt 0) {
+    Write-Output ('ADAPTER CHECK FAILED [{0}]: {1} problem(s). Run configure-platform.ps1 to refresh a platform, or remove-platform.ps1 to decommission one.' -f $setDescription, $problems)
     exit 1
+}
+
+if ($orphans.Count -gt 0) {
+    Write-Output ('ADAPTER CHECK OK [{0}]: {1} file(s) match docs/_system; {2} orphan(s) reported above, not treated as failures here.' -f $setDescription, $verified, $orphans.Count)
+    exit 0
 }
 
 Write-Output ('ADAPTER CHECK OK [{0}]: {1} file(s) match docs/_system and no orphans are present.' -f $setDescription, $verified)

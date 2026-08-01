@@ -271,6 +271,8 @@ You are not asked which platform is configured. Which platforms an installation 
 
 The command leaves the upgrade as an uncommitted repository diff for review. It does not commit or push unless you request those actions separately.
 
+If the repository contains adapter files for a platform that is not in its configured set, the upgrade reports them and completes anyway rather than refusing. Older versions of `OttoDoc configure` could leave a repository in exactly that state — they wrote the second platform's files and then failed before recording it — so refusing would permanently strand the installations most in need of upgrading. You are told which files and which platform, and you decide: `OttoDoc configure <platform>` to adopt it, or `OttoDoc remove <platform>` to delete the files. The documentation check keeps failing until you do one or the other.
+
 Installations created before `OttoDoc upgrade` existed may not recognize the short command yet. For that one-time transition, use:
 
 ```text

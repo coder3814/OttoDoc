@@ -213,7 +213,11 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Knowledge-tree lint failed under the new engine.' }
     & $regen
     if ($LASTEXITCODE -ne 0) { throw 'Index regeneration failed under the new engine.' }
-    & $checkAdapters
+    # Orphans are reported but not fatal here. They are pre-existing state this upgrade
+    # did not create, and rolling back over them would strand the repository on the old
+    # engine forever - which is precisely what would happen to any installation that hit
+    # the pre-additive `configure` bug. CI still fails on them, so they cannot rot.
+    & $checkAdapters -WarnOnOrphans
     if ($LASTEXITCODE -ne 0) { throw 'Agent-platform verification failed under the new engine.' }
     & $regen -Check
     if ($LASTEXITCODE -ne 0) { throw 'Generated-index verification failed under the new engine.' }

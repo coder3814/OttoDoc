@@ -21,7 +21,7 @@ Bootstrap creates any missing kind directories and the durable empty `docs/_inta
 - To add or refresh an agent platform, run `./docs/_system/scripts/configure-platform.ps1 -Platform <Claude|Codex|Cursor>`.
 - To decommission one, run `./docs/_system/scripts/remove-platform.ps1 -Platform <Claude|Codex|Cursor>`. Removing the last one is allowed and leaves the engine installed with zero configured platforms.
 - To remove the engine and every platform while keeping the documentation, run `./docs/_system/scripts/uninstall.ps1`.
-- To verify every installed adapter without writing, run `./docs/_system/scripts/check-adapters.ps1`. It takes no arguments, and it fails on drift and on adapter files belonging to no configured platform alike.
+- To verify every installed adapter without writing, run `./docs/_system/scripts/check-adapters.ps1`. It takes no platform argument, and it fails on drift and on adapter files belonging to no configured platform alike. Upgrade passes `-WarnOnOrphans`, which reports those stray files instead of failing on them, so a pre-existing mess cannot block an upgrade; CI never passes it, so the build still fails until someone configures or removes that platform.
 - Never edit generated files under `.claude/`, `.codex/agents/`, `.agents/skills/documentation/`, `.cursor/`, or `.github/workflows/docs.yml` directly, and never edit inside the `ottodoc:begin`/`ottodoc:end` markers in `AGENTS.md` or `CLAUDE.md`. Everything outside those markers is yours.
 
 Read [the constitution](constitution.md) for the knowledge contract and governance, and [`process/`](process/) for the canonical coordinator, author, reviewer, and workflow definitions.
