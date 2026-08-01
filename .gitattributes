@@ -1,0 +1,9 @@
+# Line endings are a repository property, not a per-contributor setting.
+#
+# Every tracked text file is stored with LF in the repository and checked out
+# with LF in the working tree, regardless of core.autocrlf. This matches the
+# LF output the engine scripts write (Write-Utf8LfFile in _system/scripts) and
+# keeps generated files byte-identical to what regen produces, so a checkout
+# never reports spurious modifications. Binary files are detected and left
+# untouched by text=auto.
+* text=auto eol=lf
