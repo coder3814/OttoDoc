@@ -8,7 +8,7 @@ Documentation-only work may inspect the repository but may modify only `docs/`. 
 
 ## Agent interface
 
-`OttoDoc <action>` is the portable, first-class command form in any supported agent interface. Supported actions are `install`, `upgrade`, `configure`, `assess`, `create`, `update`, `move`, `retire`, `intake`, `review`, `check`, `fix`, and `explain`. Treat a request beginning with an OttoDoc command as an explicit request to use this documentation engine. The agent selects the applicable workflow, roles, templates, and deterministic tooling from the action and the instructions that follow it. `Install` adds the OttoDoc engine to a repository, `upgrade` replaces an installed engine with the newest canonical files, `configure` selects or refreshes generated files for a named agent platform, and `update` edits a knowledge document.
+`OttoDoc <action>` is the portable, first-class command form in any supported agent interface. Supported actions are `install`, `upgrade`, `configure`, `assess`, `create`, `update`, `rename`, `move`, `retire`, `intake`, `review`, `check`, `fix`, and `explain`. Treat a request beginning with an OttoDoc command as an explicit request to use this documentation engine. The agent selects the applicable workflow, roles, templates, and deterministic tooling from the action and the instructions that follow it. `Install` adds the OttoDoc engine to a repository, `upgrade` replaces an installed engine with the newest canonical files, `configure` selects or refreshes generated files for a named agent platform, `update` edits a knowledge document, and `rename` changes only a concept filename while repairing links and regenerating indexes.
 
 ### Upgrade workflow
 
@@ -33,6 +33,7 @@ Humans may place rough documents and external material directly in the flat `doc
 Maintainers may scaffold or edit documentation directly when they need the underlying execution layer. Agent normalization and fresh-context review follow before completion.
 
 - Scaffold: `docs/_system/scripts/scaffold.ps1 -Kind <runbook|reference|decision|explanation|plan|design> -Slug <kebab-slug> -Title "<Title>" -Actor "<actor>" [-Subject <kebab-subject>]`
+- Rename: `docs/_system/scripts/rename.ps1 -Path <knowledge-file> -Slug <new-kebab-slug>`
 - Lint: `docs/_system/scripts/lint.ps1`
 - Regenerate: `docs/_system/scripts/regen.ps1`
 - Prove current: `docs/_system/scripts/regen.ps1 -Check`

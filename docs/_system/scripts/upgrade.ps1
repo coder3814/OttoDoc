@@ -143,7 +143,7 @@ try {
         throw ('Downloaded archive must contain exactly one docs/_system directory; found {0}.' -f $candidates.Count)
     }
     $incomingSystem = $candidates[0].FullName
-    foreach ($required in @('constitution.md', 'process/workflow.md', 'scripts/upgrade.ps1', 'scripts/configure-platform.ps1', 'scripts/lint.ps1', 'scripts/regen.ps1')) {
+    foreach ($required in @('constitution.md', 'process/workflow.md', 'scripts/upgrade.ps1', 'scripts/configure-platform.ps1', 'scripts/lint.ps1', 'scripts/regen.ps1', 'scripts/rename.ps1')) {
         if (-not (Test-Path -LiteralPath (Join-Path $incomingSystem $required) -PathType Leaf)) {
             throw ('Downloaded engine is incomplete; missing docs/_system/{0}.' -f $required)
         }

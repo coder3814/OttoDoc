@@ -157,7 +157,7 @@ The repo carries no CLAUDE.md by decision — the tree is self-describing via th
 | OKF spec | `_system/okf-spec.md` | Vendored OKF v0.2 spec (upstream: GoogleCloudPlatform/knowledge-catalog) |
 | Process definitions | `_system/process/` | Canonical workflow, coordinator, author, and reviewer behavior |
 | Templates | `_system/templates/` | One markdown skeleton per kind, frontmatter stubs included |
-| Scripts | `_system/scripts/` | Bootstrap, upgrade, lint, regen, scaffold, and deterministic agent-platform configuration/checking |
+| Scripts | `_system/scripts/` | Bootstrap, upgrade, lint, regen, scaffold, rename, and deterministic agent-platform configuration/checking |
 | Integration templates | `_system/integrations/` | Portable Claude and GitHub Actions adapters copied into platform-required discovery paths |
 | Installed adapters | `.claude/` and `.github/workflows/docs.yml` | Generated copies only; never edited directly and checked for drift by CI |
 

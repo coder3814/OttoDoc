@@ -293,6 +293,7 @@ These commands are portable across Claude, Codex, and Cursor:
 | `OttoDoc assess` | Assess a completed change for documentation impact |
 | `OttoDoc create` | Create a document of a specified kind |
 | `OttoDoc update` | Update an existing document |
+| `OttoDoc rename` | Rename a document file, repair links, and regenerate indexes |
 | `OttoDoc move` | Move a document and repair affected links |
 | `OttoDoc retire` | Deliberately remove documentation that is no longer live |
 | `OttoDoc intake` | Process one named intake file, or all Intake when no filename is supplied |
@@ -374,6 +375,22 @@ OttoDoc update docs/explanations/api-authentication.md to match the current impl
 #### What happens
 
 OttoDoc preserves useful content, verifies repository-defined claims, updates material provenance, performs fresh-context review, validates the document contract, and regenerates affected navigation.
+
+### `OttoDoc rename`
+
+#### Purpose
+
+Change a knowledge document's filename without changing its kind, subject, or content identity. OttoDoc repairs links that point to the old filename and rebuilds generated navigation in the same operation.
+
+#### Example
+
+```text
+OttoDoc rename docs/reference/retry-policy.md to retry-behavior
+```
+
+#### What happens
+
+OttoDoc validates the source and new lowercase kebab-case filename, renames the file in place, repairs relative inbound links, and regenerates all indexes. The execution layer is also available to maintainers as `docs/_system/scripts/rename.ps1 -Path <path> -Slug <new-slug>`.
 
 ### `OttoDoc move`
 

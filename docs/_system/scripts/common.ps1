@@ -1,6 +1,6 @@
 # Documentation engine shared helpers. Part of the engine (constitution section 9):
 # changed only on the repository owner's explicit request.
-# Dot-sourced by lint.ps1, regen.ps1, and scaffold.ps1. Compatible with Windows PowerShell 5.1 and pwsh.
+# Dot-sourced by lint.ps1, regen.ps1, scaffold.ps1, and rename.ps1. Compatible with Windows PowerShell 5.1 and pwsh.
 
 Set-StrictMode -Version 2.0
 

@@ -1,6 +1,6 @@
 ---
 name: doc
-description: Use OttoDoc to install, upgrade, configure, assess, create, normalize, edit, move, review, check, process, or retire repository documentation.
+description: Use OttoDoc to install, upgrade, configure, assess, create, normalize, edit, rename, move, review, check, process, or retire repository documentation.
 ---
 
 # Documentation work
