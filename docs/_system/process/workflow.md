@@ -21,7 +21,9 @@ Every OttoDoc action except `install` is a per-verb slash command in each config
 
 ## Agent-driven work
 
-Dispatch `doc-coordinator` after every completed system-modifying task and for agent-driven documentation work. The coordinator assesses impact itself and may conclude that no documentation change is justified. When work is needed, it dispatches `doc-author`, then a fresh-context `doc-reviewer`, returning findings to the author for at most two revision cycles before asking the owner.
+Dispatch `doc-coordinator` after every completed system-modifying task and for agent-driven documentation work. The coordinator assesses impact itself and may conclude that no documentation change is justified. When work is needed, it dispatches `doc-author`, then a fresh-context `doc-reviewer`, re-dispatching the author with any findings for at most two revision cycles before asking the owner.
+
+Dispatch is a call that returns. Each role delivers its report as its final response to whoever dispatched it, and the coordinator collects every result itself rather than ending its turn to wait for one. Roles never message each other by name, because a role name identifies a definition rather than a running agent.
 
 Required documentation remains in the same change or pull request as its implementation. The coordinator, author, and reviewer retain the authority boundaries in their canonical definitions under `docs/_system/process/`.
 

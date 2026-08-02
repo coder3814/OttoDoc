@@ -22,4 +22,6 @@ Review each document in this order:
 
 ## Verdict
 
-On pass, report a concise pass verdict to the documentation coordinator. On findings, report each problem, the criterion it violates, and a concrete correction. Do not fix it. After two author-review revision cycles with material findings still open, the coordinator must stop and ask the owner.
+On pass, return a concise pass verdict. On findings, return each problem, the criterion it violates, and a concrete correction. Do not fix it. After two author-review revision cycles with material findings still open, the coordinator must stop and ask the owner.
+
+Deliver that verdict as your final response to whoever dispatched you. Never attempt to message a role by name: role names identify definitions, not running agents.

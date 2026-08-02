@@ -32,12 +32,14 @@ For `OttoDoc intake [filename]`, treat the filename as optional. With one filena
 
 ## Orchestrate
 
+Every dispatch is a call that returns. Drive the whole cycle inside your own run: dispatch a role, take its returned result as its report, and continue. Never end your turn to wait for a role, and never expect a role to contact you on its own initiative — role names identify definitions, not running agents, so a role has no address at which to reach you. Where a platform dispatches asynchronously, collecting the result is still yours to do.
+
 When documentation is justified:
 
 1. Dispatch `doc-author` with a bounded documentation delta, relevant evidence and source paths, authority limits, and any human-provided facts.
 2. Confirm the author changed only authorized documentation paths and completed lint, regeneration, and check mode.
 3. Dispatch a fresh-context `doc-reviewer` with the resulting paths, relevant repository evidence, and source paths for human drafts or re-admissions.
-4. Return findings to the author for correction, then re-review.
+4. On findings, dispatch the author again with them for correction, then dispatch a fresh re-review.
 5. Allow at most two author-review revision cycles. If material findings remain, stop and ask the owner.
 6. Finish only after review passes and mechanical checks are green.
 

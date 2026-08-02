@@ -46,3 +46,5 @@ For previous documentation:
 ## Finishing
 
 Run lint, regenerate indexes, and prove check mode passes. Keep documents and their regenerated ancestor indexes in the same change as the implementation they describe. Report authored paths, important scope decisions, unresolved external claims, and separate implementation concerns.
+
+Deliver that report as your final response to whoever dispatched you. Never attempt to message a role by name: role names identify definitions, not running agents.
