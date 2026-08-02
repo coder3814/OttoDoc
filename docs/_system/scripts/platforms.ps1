@@ -7,6 +7,14 @@
 
 $Script:SupportedPlatforms = @('Claude', 'Codex', 'Cursor')
 
+# Every OttoDoc command verb except install, which necessarily runs before any
+# adapter exists. Each verb becomes one slash-command adapter per platform.
+$Script:CommandVerbs = @(
+    'assess', 'create', 'update', 'rename', 'move', 'retire', 'intake',
+    'review', 'check', 'fix', 'explain',
+    'upgrade', 'configure', 'remove', 'uninstall'
+)
+
 # The single authoritative statement of which files belong to which platform.
 # Ownership of the target paths is absolute (lifecycle.md): converge overwrites and
 # removes them without inspecting their content.
@@ -16,14 +24,12 @@ $Script:PlatformAdapters = [ordered]@{
             'integrations/claude/agents/doc-coordinator.md' = '.claude/agents/doc-coordinator.md'
             'integrations/claude/agents/doc-author.md'      = '.claude/agents/doc-author.md'
             'integrations/claude/agents/doc-reviewer.md'    = '.claude/agents/doc-reviewer.md'
-            'integrations/claude/skills/doc/SKILL.md'       = '.claude/skills/doc/SKILL.md'
         }
         BlockSource = 'integrations/claude/CLAUDE.md'
         BlockTarget = 'CLAUDE.md'
     }
     'Codex' = [ordered]@{
         Owned = [ordered]@{
-            'integrations/codex/skills/documentation/SKILL.md' = '.agents/skills/documentation/SKILL.md'
             'integrations/codex/agents/doc-coordinator.toml'   = '.codex/agents/doc-coordinator.toml'
             'integrations/codex/agents/doc-author.toml'        = '.codex/agents/doc-author.toml'
             'integrations/codex/agents/doc-reviewer.toml'      = '.codex/agents/doc-reviewer.toml'
@@ -42,6 +48,18 @@ $Script:PlatformAdapters = [ordered]@{
         BlockSource = ''
         BlockTarget = ''
     }
+}
+
+# The per-verb slash-command adapters: /ottodoc-<verb> on Claude and Cursor,
+# $ottodoc-<verb> on Codex (which has no repository-level slash commands).
+# Appended to the map here so the file lists remain a single authoritative statement.
+foreach ($commandVerb in $Script:CommandVerbs) {
+    $Script:PlatformAdapters['Claude']['Owned'][('integrations/claude/skills/ottodoc-{0}/SKILL.md' -f $commandVerb)] =
+        ('.claude/skills/ottodoc-{0}/SKILL.md' -f $commandVerb)
+    $Script:PlatformAdapters['Codex']['Owned'][('integrations/codex/skills/ottodoc-{0}/SKILL.md' -f $commandVerb)] =
+        ('.agents/skills/ottodoc-{0}/SKILL.md' -f $commandVerb)
+    $Script:PlatformAdapters['Cursor']['Owned'][('integrations/cursor/commands/ottodoc-{0}.md' -f $commandVerb)] =
+        ('.cursor/commands/ottodoc-{0}.md' -f $commandVerb)
 }
 
 $Script:WorkflowSource = 'integrations/github-actions/docs.yml'
@@ -199,13 +217,15 @@ function Get-CanonicalContent {
 }
 
 function Remove-GeneratedFile {
-    # Deletes a generated file and, best effort, the directory the deletion emptied.
+    # Deletes a generated file and, best effort, every directory the deletion emptied,
+    # walking upward until a directory still holds something (the repository root always does).
     param([string]$Path)
     Remove-Item -LiteralPath $Path -Force
     $parent = Split-Path -Parent $Path
-    if ((Test-Path -LiteralPath $parent -PathType Container) -and
+    while ($parent -and (Test-Path -LiteralPath $parent -PathType Container) -and
         @(Get-ChildItem -LiteralPath $parent -Force).Count -eq 0) {
         Remove-Item -LiteralPath $parent -Force
+        $parent = Split-Path -Parent $parent
     }
 }
 

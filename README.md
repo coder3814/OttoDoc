@@ -173,32 +173,32 @@ Open your agent interface at the root of the repository you want to document and
 OttoDoc install Codex from https://github.com/coder3814/OttoDoc
 ```
 
-Use `Claude` or `Cursor` instead of `Codex` as appropriate. Your agent retrieves the portable engine into `docs/_system/`, creates the six kind directories and `docs/_intake/`, records the chosen platform in `docs/.ottodoc`, generates the platform's adapters and the GitHub documentation check, and builds the initial indexes. If the repository already contains documentation that does not conform, installation stops with no existing content modified—run `OttoDoc check` to see what needs fixing, then install again. Review and commit the installed files.
+Use `Claude` or `Cursor` instead of `Codex` as appropriate. Install is the one command typed as plain prose, because it runs before any adapter exists. Your agent retrieves the portable engine into `docs/_system/`, creates the six kind directories and `docs/_intake/`, records the chosen platform in `docs/.ottodoc`, generates the platform's adapters — including a slash command for every other OttoDoc verb — and the GitHub documentation check, and builds the initial indexes. If the repository already contains documentation that does not conform, installation stops with no existing content modified—run `OttoDoc check` to see what needs fixing, then install again. Review and commit the installed files.
 
 The file `docs/.ottodoc` records which platforms are configured; it is the single source of truth the tooling converges the repository against. Platform paths such as `.claude/`, `.codex/`, `.cursor/`, `.agents/`, and `.github/workflows/docs.yml` are generated whole and owned by OttoDoc—never edit them, and never edit inside the `ottodoc:begin`/`ottodoc:end` markers in `CLAUDE.md` or `AGENTS.md`. Everything outside those markers is yours and is preserved byte for byte.
 
-Everyday maintenance is four commands, pasted into any configured agent:
+Everyday maintenance is four slash commands, typed into any configured agent:
 
 ```text
-OttoDoc configure Claude
+/ottodoc-configure Claude
 ```
 
 adds a platform (additive—platforms already configured are untouched), so a teammate's tool follows the same contract;
 
 ```text
-OttoDoc remove Cursor
+/ottodoc-remove Cursor
 ```
 
 decommissions one named platform, deleting its generated files and stripping its shared-file block. Removing your last platform is fine: the engine stays installed and CI keeps checking;
 
 ```text
-OttoDoc upgrade
+/ottodoc-upgrade
 ```
 
 replaces `docs/_system/` with the newest engine from GitHub and refreshes every recorded platform. It requires a clean git tree, because git is the undo: every lifecycle command leaves an uncommitted diff for review and none keeps backups;
 
 ```text
-OttoDoc uninstall
+/ottodoc-uninstall
 ```
 
 removes the engine, every platform, the record, and the CI check while preserving every document, index, asset, and `docs/_intake/`. The tree stays conformant, so reinstalling later restores the indexes byte for byte.
@@ -209,42 +209,42 @@ The full management specification—the adapter map, the record file, and conver
 
 ## OttoDoc command reference
 
-OttoDoc is used through action commands in your agent conversation. Follow a command with the target, scope, or instructions it needs.
+Every verb is a slash command in your agent conversation: type `/ottodoc-<verb>` in Claude Code or Cursor, or `$ottodoc-<verb>` in Codex (which has no repository-level slash commands). Follow the command with the target, scope, or instructions it needs. The prose form `OttoDoc <verb> …` works everywhere as a portable equivalent, and is how `install` is invoked, since nothing is installed yet.
 
 Documentation verbs:
 
 | Command | Purpose |
 | --- | --- |
-| `OttoDoc assess` | Assess a completed change for documentation impact |
-| `OttoDoc create` | Create a document of a specified kind |
-| `OttoDoc update` | Update an existing document |
-| `OttoDoc rename` | Rename a document file, repair links, and regenerate indexes |
-| `OttoDoc move` | Move a document and repair affected links |
-| `OttoDoc retire` | Deliberately remove documentation that is no longer live |
-| `OttoDoc intake` | Process one named file from `docs/_intake/`, or all of intake when no filename is supplied |
-| `OttoDoc review` | Perform fresh-context review of a document or documentation change |
-| `OttoDoc check` | Verify the entire documentation system without changing it |
-| `OttoDoc fix` | Resolve reported documentation findings and verify the result |
-| `OttoDoc explain` | Explain an applicable OttoDoc rule or document choice |
+| `/ottodoc-assess` | Assess a completed change for documentation impact |
+| `/ottodoc-create` | Create a document of a specified kind |
+| `/ottodoc-update` | Update an existing document |
+| `/ottodoc-rename` | Rename a document file, repair links, and regenerate indexes |
+| `/ottodoc-move` | Move a document and repair affected links |
+| `/ottodoc-retire` | Deliberately remove documentation that is no longer live |
+| `/ottodoc-intake` | Process one named file from `docs/_intake/`, or all of intake when no filename is supplied |
+| `/ottodoc-review` | Perform fresh-context review of a document or documentation change |
+| `/ottodoc-check` | Verify the entire documentation system without changing it |
+| `/ottodoc-fix` | Resolve reported documentation findings and verify the result |
+| `/ottodoc-explain` | Explain an applicable OttoDoc rule or document choice |
 
 Lifecycle verbs:
 
 | Command | Purpose |
 | --- | --- |
-| `OttoDoc install` | Install the OttoDoc engine and configure its initial agent platform |
-| `OttoDoc upgrade` | Replace an existing engine with the newest version and refresh every recorded platform |
-| `OttoDoc configure` | Add or refresh one agent platform, leaving the others untouched |
-| `OttoDoc remove` | Decommission one named agent platform |
-| `OttoDoc uninstall` | Remove the engine and every agent platform, keeping the documentation |
-| `OttoDoc check` | Verify the installation matches the record and the canonical engine (the full check above covers the tree too) |
+| `OttoDoc install` | Install the OttoDoc engine and configure its initial agent platform (prose only—no adapter exists yet) |
+| `/ottodoc-upgrade` | Replace an existing engine with the newest version and refresh every recorded platform |
+| `/ottodoc-configure` | Add or refresh one agent platform, leaving the others untouched |
+| `/ottodoc-remove` | Decommission one named agent platform |
+| `/ottodoc-uninstall` | Remove the engine and every agent platform, keeping the documentation |
+| `/ottodoc-check` | Verify the installation matches the record and the canonical engine (the full check above covers the tree too) |
 
 A few examples:
 
 ```text
-OttoDoc create runbook "Rotate the webhook signing key" using repository configuration as evidence
-OttoDoc update docs/explanations/api-authentication.md to match the current implementation
-OttoDoc intake cache-design-notes.md
-OttoDoc assess the change I just completed and update the documentation if needed
+/ottodoc-create runbook "Rotate the webhook signing key" using repository configuration as evidence
+/ottodoc-update docs/explanations/api-authentication.md to match the current implementation
+/ottodoc-intake cache-design-notes.md
+/ottodoc-assess the change I just completed and update the documentation if needed
 ```
 
 ---

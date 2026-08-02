@@ -8,7 +8,7 @@ Documentation-only work may inspect the repository but may modify only `docs/`. 
 
 ## Agent interface
 
-`OttoDoc <action>` is the portable, first-class command form in any supported agent interface. Supported actions are `install`, `upgrade`, `configure`, `remove`, `uninstall`, `assess`, `create`, `update`, `rename`, `move`, `retire`, `intake`, `review`, `check`, `fix`, and `explain`. Treat a request beginning with an OttoDoc command as an explicit request to use this documentation engine. The agent selects the applicable workflow, roles, templates, and deterministic tooling from the action and the instructions that follow it. `Update` edits a knowledge document, and `rename` changes only a concept filename while repairing links and regenerating indexes.
+Every OttoDoc action except `install` is a per-verb slash command in each configured platform: `/ottodoc-<verb>` in Claude Code and Cursor, and the `ottodoc-<verb>` skill in Codex, invoked as `$ottodoc-<verb>` because Codex has no repository-level slash commands. Supported actions are `install`, `upgrade`, `configure`, `remove`, `uninstall`, `assess`, `create`, `update`, `rename`, `move`, `retire`, `intake`, `review`, `check`, `fix`, and `explain`. The prose form `OttoDoc <action>` is the portable equivalent in any supported agent interface, and the only form for `install`, which necessarily runs before any adapter exists. Treat either form as an explicit request to use this documentation engine. The agent selects the applicable workflow, roles, templates, and deterministic tooling from the action and the instructions that follow it. `Update` edits a knowledge document, and `rename` changes only a concept filename while repairing links and regenerating indexes.
 
 ### Lifecycle commands
 

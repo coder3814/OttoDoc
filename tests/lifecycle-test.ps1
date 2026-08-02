@@ -42,7 +42,7 @@ try {
     & (Join-Path $scripts 'bootstrap.ps1') -Platform Codex | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'bootstrap -Platform Codex exits 0'
     Assert ((Read-Record) -eq 'platforms: Codex') 'record is "platforms: Codex"'
-    Assert (Test-Path (Join-Path $repo '.agents\skills\documentation\SKILL.md')) 'Codex owned file written'
+    Assert (Test-Path (Join-Path $repo '.agents\skills\ottodoc-assess\SKILL.md')) 'Codex owned file written'
     Assert ((Read-Text (Join-Path $repo 'AGENTS.md')).Contains('ottodoc:begin')) 'AGENTS.md carries the block'
     Assert (Test-Path (Join-Path $repo '.github\workflows\docs.yml')) 'CI workflow written'
 
@@ -60,12 +60,13 @@ try {
     Assert ($agents.Contains('# Owner heading') -and $agents.Contains('Owner trailing note.')) 'owner content in AGENTS.md survives configure'
     Assert ($agents.Contains('ottodoc:begin')) 'AGENTS.md block still present'
     Assert ((Test-Path (Join-Path $repo 'CLAUDE.md')) -and (Read-Text (Join-Path $repo 'CLAUDE.md')).Contains('ottodoc:begin')) 'CLAUDE.md block appears'
+    Assert (Test-Path (Join-Path $repo '.claude\skills\ottodoc-uninstall\SKILL.md')) 'Claude per-verb slash skill written'
 
     & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'check passes with two platforms'
 
     # --- check actually detects drift, and converge repairs it ---
-    $ownedPath = Join-Path $repo '.claude\skills\doc\SKILL.md'
+    $ownedPath = Join-Path $repo '.claude\skills\ottodoc-check\SKILL.md'
     [System.IO.File]::WriteAllText($ownedPath, 'tampered')
     & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
     Assert ($LASTEXITCODE -ne 0) 'check fails on a tampered owned file'
@@ -77,8 +78,8 @@ try {
     # --- remove Codex: files gone, block stripped, owner content intact ---
     & (Join-Path $scripts 'remove-platform.ps1') -Platform Codex | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'remove -Platform Codex exits 0'
-    Assert (-not (Test-Path (Join-Path $repo '.agents\skills\documentation\SKILL.md'))) 'Codex owned files removed'
-    Assert (-not (Test-Path (Join-Path $repo '.codex\agents'))) '.codex adapter directory removed'
+    Assert (-not (Test-Path (Join-Path $repo '.agents'))) '.agents adapter tree removed'
+    Assert (-not (Test-Path (Join-Path $repo '.codex'))) '.codex adapter tree removed'
     $agents = Read-Text $agentsPath
     Assert (-not $agents.Contains('ottodoc:begin')) 'AGENTS.md block stripped'
     Assert ($agents.Contains('# Owner heading') -and $agents.Contains('Owner trailing note.')) 'owner content in AGENTS.md intact after remove'
@@ -149,7 +150,7 @@ The answer is 42.
     Assert (-not (Test-Path (Join-Path $repo 'docs\_system'))) 'docs/_system removed'
     Assert (-not (Test-Path (Join-Path $repo '.github\workflows\docs.yml'))) 'CI workflow removed'
     Assert (-not (Test-Path (Join-Path $repo 'docs\.ottodoc'))) 'record removed'
-    Assert (-not ((Test-Path (Join-Path $repo '.claude\agents\doc-coordinator.md')) -or (Test-Path (Join-Path $repo '.claude\skills\doc\SKILL.md')) -or (Test-Path (Join-Path $repo 'CLAUDE.md')))) 'Claude adapters removed'
+    Assert (-not ((Test-Path (Join-Path $repo '.claude')) -or (Test-Path (Join-Path $repo 'CLAUDE.md')))) 'Claude adapters removed'
     Assert (Test-Path (Join-Path $repo 'docs\reference\test-fact.md')) 'document preserved'
     Assert (Test-Path (Join-Path $repo 'docs\index.md')) 'root index preserved'
     Assert (Test-Path (Join-Path $repo 'docs\_intake')) 'docs/_intake preserved'
