@@ -1,8 +1,6 @@
 # The Documentation Constitution
 
-> **Engine guard:** the files of `docs/_system/` — and the engine components listed in §9, wherever they live — are changed only on the repository owner's explicit request, never in stride with other work. If a task seems to require an engine change, stop and ask.
-
-> **Editorial guard:** this document ships verbatim into every repository that installs OttoDoc, so nothing in it may name facts particular to one installation — no repository names, git tags, branch names, or history belonging to a single repo. Rules are stated in terms every consumer can apply.
+> **Note:** this document ships verbatim into every repository that installs OttoDoc, so nothing in it may name facts particular to one installation — no repository names, git tags, branch names, or history belonging to a single repo. Rules are stated in terms every consumer can apply.
 
 This document governs everything under `docs/`. It is the single source of truth for how documentation is structured, created, changed, and removed. Every rule the tooling enforces and every judgment an author makes traces back to here. If practice and this document disagree, one of them is wrong — fix whichever it is, deliberately.
 
@@ -125,7 +123,7 @@ Anything drawn from previous documentation — intake files, a human draft, exte
 
 **Documentation authority is narrow.** A documentation-only task may inspect the repository, but it may modify only `docs/` (including generated indexes and consumed `_intake/` sources). It never fixes code, tests, scripts, workflows, configuration, infrastructure, schemas, or deployed state. Implementation concerns appear separately in the task result; no findings file or issue is created without separate authorization. Documenting current defective behavior does not endorse it.
 
-The explicit lifecycle commands `install`, `upgrade`, `configure`, `remove`, and `uninstall` are the exceptions to that limit. They may retrieve or delete the OttoDoc engine, and they write, refresh, or remove only its canonical engine files, its generated agent-platform adapters, its own delimited block inside shared always-on files, its generated indexes, and its documentation-check workflow. Nothing else in the repository is theirs to touch.
+The lifecycle commands specified in [`lifecycle.md`](lifecycle.md) are the exceptions to that limit; their authority is defined there.
 
 **Intake.** `docs/_intake/` is a durable, flat, inert holding area for non-authoritative source material. Installation creates it, and upgrades restore it when it is missing, so it remains available even when empty. A human may place any file type there that the active agent can read. Directories and unsupported files are rejected during assessment; filenames must be unique, and a collision is rejected rather than renamed or overwritten. Placement never starts processing. `OttoDoc intake [filename]` is the processing command. With one filename, the coordinator assesses that direct child of `_intake/`; with no filename, it assesses every file currently in `_intake/`. Paths, directories, multiple filenames, and filename patterns are invalid parameters.
 
@@ -142,38 +140,10 @@ When a document stops being true or stops being needed, **delete it**. Git histo
 
 Documentation is authored when a real task needs it — there is no autonomous documentation service. Every completed system-modifying task receives a bounded documentation-impact assessment from the read-only coordinator; “no documentation change justified” is a valid and common result. The coordinator changes no files. When a durable reader need exists, it dispatches the documentation-only author and then a fresh-context reviewer that changes no files. It permits at most two revision-and-review cycles before asking the owner. Required documentation lands in the same change or pull request as the implementation it describes. Completion is reported briefly in natural language; material implementation concerns are separate from routine orchestration detail.
 
-Humans may supply rough documents or external material without first conforming to the engine. Agents normalize those inputs to this contract, preserve intended meaning, and ask before resolving material ambiguity. **Process lives with its actors under `_system/process/`** (§9): workflow, coordination, authoring craft, and review criteria are canonical there. Platform-required files outside `_system/` are generated discovery adapters with no original process information.
+Humans may supply rough documents or external material without first conforming to the engine. Agents normalize those inputs to this contract, preserve intended meaning, and ask before resolving material ambiguity. **Process lives with its actors under `_system/process/`**: workflow, coordination, authoring craft, and review criteria are canonical there. Platform-required files outside `_system/` are generated discovery adapters with no original process information.
 
-**Every supported platform gets an always-on surface.** The post-task assessment above is law for *every* completed system-modifying task, so a platform that can only be reached by an agent choosing to reach for it cannot honor it. Codex is carried by `AGENTS.md`, Cursor by an always-applied rule, and Claude by `CLAUDE.md` — its only always-on surface, since subagents and skills are pull-only. Into each shared always-on file OttoDoc contributes one delimited block and owns nothing else; the file itself belongs to the owner and to whatever other tools use it.
+**Every supported platform gets an always-on surface.** The post-task assessment above is law for *every* completed system-modifying task, so a platform that can only be reached by an agent choosing to reach for it cannot honor it. Which files carry each platform's surface is specified in [`lifecycle.md`](lifecycle.md).
 
-**Enforcement.** CI runs lint and check mode on every change touching `docs/` or any adapter path — pull requests and pushes to main alike. The mechanical set — frontmatter completeness, mandatory Summary placement, kind-level placement, file and asset naming, orphan assets, broken and mis-cased links, empty subject folders, banned constructs (§1), index drift, adapter drift, and adapter files belonging to no configured platform — fails the build. Scope, necessity, progressive disclosure, concision, canonical ownership, and editorial quality are enforced by coordinator assessment and fresh-context review. A document that merely conforms is not yet good.
+**Enforcement.** CI runs lint and check mode on every change touching `docs/` or any adapter path — pull requests and pushes to main alike. The mechanical set — frontmatter completeness, mandatory Summary placement, kind-level placement, file and asset naming, orphan assets, broken and mis-cased links, empty subject folders, banned constructs (§1), and index drift — fails the build. Adapter drift is checked by the lifecycle tooling ([`lifecycle.md`](lifecycle.md)). Scope, necessity, progressive disclosure, concision, canonical ownership, and editorial quality are enforced by coordinator assessment and fresh-context review. A document that merely conforms is not yet good.
 
-**Approval.**
-
-- Engine changes (§9 inventory, wherever the files live) happen only on the repository owner's explicit request — see the guard at the top of this document.
-- Tree content flows through normal PRs. Agent-authored and agent-normalized docs receive fresh-context review before completion. The review verdict lives in Git, pull-request, and workflow history, never in document metadata.
-
-## 9. The engine inventory
-
-| Component | Location | What it is |
-|---|---|---|
-| Constitution | `_system/constitution.md` | This document — the law |
-| OKF spec | `_system/okf-spec.md` | Vendored OKF v0.2 spec (upstream: GoogleCloudPlatform/knowledge-catalog) |
-| Process definitions | `_system/process/` | Canonical workflow, coordinator, author, and reviewer behavior |
-| Templates | `_system/templates/` | One markdown skeleton per kind, frontmatter stubs included |
-| Scripts | `_system/scripts/` | Bootstrap, upgrade, uninstall, lint, regen, scaffold, rename, and deterministic agent-platform configuration, removal, and checking |
-| Integration templates | `_system/integrations/` | Portable Claude, Codex, Cursor, and GitHub Actions adapters copied into platform-required discovery paths |
-| Installed adapters | the adapter map below | Generated copies only; never edited directly and checked for drift by CI |
-
-**The adapter map.** This is the authoritative statement of which installed files belong to which platform. Uninstall, removal, and the drift check are all derived from it, so it is maintained rather than descriptive — a path missing here is a path OttoDoc will strand.
-
-| Platform | Owned files — generated whole | Shared file — OttoDoc block only |
-|---|---|---|
-| Claude | `.claude/agents/doc-coordinator.md`, `.claude/agents/doc-author.md`, `.claude/agents/doc-reviewer.md`, `.claude/skills/doc/SKILL.md` | `CLAUDE.md` |
-| Codex | `.agents/skills/documentation/SKILL.md`, `.codex/agents/doc-coordinator.toml`, `.codex/agents/doc-author.toml`, `.codex/agents/doc-reviewer.toml` | `AGENTS.md` |
-| Cursor | `.cursor/rules/documentation.mdc`, `.cursor/skills/documentation/SKILL.md`, `.cursor/agents/doc-coordinator.md`, `.cursor/agents/doc-author.md`, `.cursor/agents/doc-reviewer.md` | none |
-| every configuration | `.github/workflows/docs.yml` | — |
-
-Owned files carry no generated-by stamp. A file is OttoDoc's only when its path appears above **and** its content matches what the installed engine renders for that path; anything else sitting at one of these paths is reported and left alone, never deleted or silently claimed. In shared files the delimited markers are the proof of ownership instead, so OttoDoc's block is removed by marker while everything around it is the owner's and is preserved.
-
-Every component above is engine, covered by the guard statement regardless of where the platform requires it to live. `_system/` files are plain markdown and scripts — no frontmatter, no knowledge-tree linting, and no indexing. Copying `_system/` transfers the complete portable engine. Agent-platform configuration is always an explicit user choice, one platform per command: `configure-platform.ps1 -Platform Claude`, `-Platform Codex`, or `-Platform Cursor` to add or refresh, and `remove-platform.ps1 -Platform <name>` to decommission. **Configuration is additive** — any combination of platforms may be configured at once, and configuring one never disturbs another. **Detecting installed state is required**, and is read from the record in the generated workflow rather than inferred from files lying around; **guessing which platforms the owner wants remains forbidden.** Zero configured platforms is an ordinary state: the engine is still installed and CI still runs. Engine plus an empty tree is a complete, working documentation system.
+**Approval.** Tree content flows through normal PRs. Agent-authored and agent-normalized docs receive fresh-context review before completion. The review verdict lives in Git, pull-request, and workflow history, never in document metadata.
