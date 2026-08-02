@@ -24,7 +24,7 @@ $systemRoot = Split-Path -Parent $PSScriptRoot
 $docsRoot = Split-Path -Parent $systemRoot
 $repoRoot = Split-Path -Parent $docsRoot
 
-$gitStatus = & git -C $repoRoot status --porcelain 2>$null
+$gitStatus = & git -C $repoRoot status --porcelain
 if ($LASTEXITCODE -ne 0) {
     Write-Output 'UPGRADE REFUSED: not a git repository. Git is the undo for an upgrade, so one is required.'
     exit 1

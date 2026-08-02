@@ -16,12 +16,6 @@ $docsRoot = Get-DocsRoot
 $repoRoot = Get-RepoRoot
 $systemRoot = Get-SystemRoot
 
-& (Join-Path $PSScriptRoot 'lint.ps1')
-if ($LASTEXITCODE -ne 0) {
-    Write-Output 'BOOTSTRAP FAILED: the existing documentation tree is not conformant; nothing was modified.'
-    exit 1
-}
-
 foreach ($kind in $Script:KindDirs.Keys) {
     $kindPath = Join-Path $docsRoot $kind
     if (-not (Test-Path -LiteralPath $kindPath)) {
@@ -33,6 +27,12 @@ $intakePath = Join-Path $docsRoot '_intake'
 if (-not (Test-Path -LiteralPath $intakePath)) {
     New-Item -ItemType Directory -Path $intakePath | Out-Null
     Write-Output 'CREATED: docs/_intake/'
+}
+
+& (Join-Path $PSScriptRoot 'lint.ps1')
+if ($LASTEXITCODE -ne 0) {
+    Write-Output 'BOOTSTRAP FAILED: the existing documentation tree is not conformant; no existing content was modified.'
+    exit 1
 }
 
 try {

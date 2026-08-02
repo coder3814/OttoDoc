@@ -40,6 +40,6 @@ Every lifecycle command shares one routine: read the record, then make disk matc
 | uninstall | `scripts/uninstall.ps1` | Converge to zero platforms, then delete the workflow, the record, `docs/_system/`, and the root index's governance pointer — every document, index, asset, and `_intake/` survives |
 | check | `scripts/check-adapters.ps1` | Converge `-Check`: report drift, change nothing |
 
-Lifecycle commands may modify only the engine, the mapped adapter paths, OttoDoc's block in shared files, the record, the workflow, and the generated indexes; nothing else in the repository is theirs to touch. Install fails closed: pre-existing nonconforming documents abort it with nothing modified. Upgrade requires a clean git tree and refuses to run over uncommitted changes.
+Lifecycle commands may modify only the engine, the mapped adapter paths, OttoDoc's block in shared files, the record, the workflow, and the generated indexes; nothing else in the repository is theirs to touch. Install fails closed: pre-existing nonconforming documents abort it with no existing content modified. Upgrade requires a clean git tree and refuses to run over uncommitted changes.
 
 **Git is the undo.** Every command leaves its result as an uncommitted diff for review; none commits or pushes, and none keeps backups or performs rollback. If a command fails partway, inspect the diff and use `git restore` to return to the last commit.

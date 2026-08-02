@@ -43,8 +43,8 @@ foreach ($entry in (Get-ChildItem -LiteralPath $docsRoot -Force)) {
             Add-Err $entry.Name ('unknown root directory - the root of docs/ is the closed set of kinds (constitution section 2)')
         }
     }
-    elseif ($entry.Name -ne 'index.md') {
-        Add-Err $entry.Name 'stray file at docs/ root - only the generated index.md lives here'
+    elseif ($entry.Name -ne 'index.md' -and $entry.Name -ne '.ottodoc') {
+        Add-Err $entry.Name 'stray file at docs/ root - only the generated index.md and the .ottodoc record live here'
     }
 }
 foreach ($kind in $Script:KindDirs.Keys) {
