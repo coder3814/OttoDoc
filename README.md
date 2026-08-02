@@ -50,7 +50,7 @@ OttoDoc supplies the missing contract. It installs a documentation engine under 
 | `decision` | What did we decide, and why? |
 | `explanation` | How or why does this system behave this way? |
 | `plan` | What bounded future work is proposed? |
-| `design` | How should a bounded change be built? |
+| `design` | What visual standard should rendered work conform to? |
 
 Every admitted document follows a small structural contract: machine-readable frontmatter, a summary-first shape, content provenance, and links to related knowledge. The tree remains shallow and predictable. Subject folders are introduced only when the amount of material earns them.
 
@@ -173,7 +173,7 @@ Open your agent interface at the root of the repository you want to document and
 OttoDoc install Codex from https://github.com/coder3814/OttoDoc
 ```
 
-Use `Claude` or `Cursor` instead of `Codex` as appropriate. Your agent retrieves the portable engine into `docs/_system/`, creates the six kind directories and `docs/_intake/`, records the chosen platform in `docs/.ottodoc`, generates the platform's adapters and the GitHub documentation check, and builds the initial indexes. If the repository already contains documentation that does not conform, installation stops with nothing modified—run `OttoDoc check` to see what needs fixing, then install again. Review and commit the installed files.
+Use `Claude` or `Cursor` instead of `Codex` as appropriate. Your agent retrieves the portable engine into `docs/_system/`, creates the six kind directories and `docs/_intake/`, records the chosen platform in `docs/.ottodoc`, generates the platform's adapters and the GitHub documentation check, and builds the initial indexes. If the repository already contains documentation that does not conform, installation stops with no existing content modified—run `OttoDoc check` to see what needs fixing, then install again. Review and commit the installed files.
 
 The file `docs/.ottodoc` records which platforms are configured; it is the single source of truth the tooling converges the repository against. Platform paths such as `.claude/`, `.codex/`, `.cursor/`, `.agents/`, and `.github/workflows/docs.yml` are generated whole and owned by OttoDoc—never edit them, and never edit inside the `ottodoc:begin`/`ottodoc:end` markers in `CLAUDE.md` or `AGENTS.md`. Everything outside those markers is yours and is preserved byte for byte.
 
@@ -236,6 +236,7 @@ Lifecycle verbs:
 | `OttoDoc configure` | Add or refresh one agent platform, leaving the others untouched |
 | `OttoDoc remove` | Decommission one named agent platform |
 | `OttoDoc uninstall` | Remove the engine and every agent platform, keeping the documentation |
+| `OttoDoc check` | Verify the installation matches the record and the canonical engine (the full check above covers the tree too) |
 
 A few examples:
 

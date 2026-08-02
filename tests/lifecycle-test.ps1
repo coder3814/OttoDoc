@@ -64,6 +64,16 @@ try {
     & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'check passes with two platforms'
 
+    # --- check actually detects drift, and converge repairs it ---
+    $ownedPath = Join-Path $repo '.claude\skills\doc\SKILL.md'
+    [System.IO.File]::WriteAllText($ownedPath, 'tampered')
+    & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
+    Assert ($LASTEXITCODE -ne 0) 'check fails on a tampered owned file'
+    & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
+    Assert ($LASTEXITCODE -eq 0) 'converge repairs the tampered file'
+    & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
+    Assert ($LASTEXITCODE -eq 0) 'check passes again after repair'
+
     # --- remove Codex: files gone, block stripped, owner content intact ---
     & (Join-Path $scripts 'remove-platform.ps1') -Platform Codex | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'remove -Platform Codex exits 0'

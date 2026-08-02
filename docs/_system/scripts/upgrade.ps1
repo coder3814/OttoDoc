@@ -48,7 +48,8 @@ try {
         Write-Output ('UPGRADE SOURCE: local archive {0}' -f $resolvedArchive)
     }
     else {
-        $archiveUrl = '{0}/archive/refs/heads/{1}.zip' -f $Repository.TrimEnd('/'), $Ref
+        # The generic archive form resolves branches, tags, and commit SHAs alike.
+        $archiveUrl = '{0}/archive/{1}.zip' -f $Repository.TrimEnd('/'), $Ref
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         Write-Output ('UPGRADE DOWNLOAD: {0}' -f $archiveUrl)
         Invoke-WebRequest -Uri $archiveUrl -OutFile $downloadPath -UseBasicParsing
