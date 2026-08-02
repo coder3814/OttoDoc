@@ -8,7 +8,7 @@
 
 **Structured knowledge · Automatic indexes · Agent workflows · Portable Markdown**
 
-[Why OttoDoc](#the-problem) · [How it works](#what-ottodoc-changes) · [Install](#install-ottodoc) · [Upgrade](#upgrade-an-existing-installation) · [Add a platform](#add-an-agent-platform-to-an-existing-installation) · [Commands](#ottodoc-command-reference)
+[Why OttoDoc](#the-problem) · [How it works](#what-ottodoc-changes) · [Install and maintain](#install-and-maintain) · [Commands](#ottodoc-command-reference)
 
 OttoDoc is a portable, repository-local documentation system for software teams working with humans and coding agents. It gives documentation a defined structure, a repeatable authoring and review process, mechanical quality checks, and adapters that teach supported agents how to follow the same rules.
 
@@ -111,7 +111,6 @@ Generated indexes solve several maintenance problems at once:
 - New documents cannot remain hidden because the next generation pass adds them.
 - Deleted documents cannot leave ghost entries because indexes are rebuilt from what actually exists.
 - Moves are reflected throughout the navigation tree.
-- Empty and populated sections remain predictable across installations.
 - The same knowledge tree always produces the same index bytes, keeping reviews clean and reproducible.
 - CI can regenerate indexes in memory and detect drift without modifying the repository.
 
@@ -122,19 +121,9 @@ An index contains no original knowledge and is never edited by hand. If every in
 
 ### 4. Assets with accountable owners
 
-Not everything that supports documentation belongs in Markdown. OttoDoc accepts non-Markdown assets such as:
+Not everything that supports documentation belongs in Markdown. OttoDoc accepts non-Markdown assets—images, diagrams, captured data, reference artifacts, and scripts that are themselves documentation content—and treats them as payload, not standalone knowledge. The knowledge about an asset belongs in a concept document.
 
-- images and diagrams, including PNG, JPEG, GIF, WebP, and SVG files;
-- structured examples or captured data, including CSV, JSON, YAML, and XML files;
-- reference artifacts such as PDFs and text exports;
-- scripts that are themselves documentation content, such as SQL, shell, PowerShell, or Python examples; and
-- other binary or domain-specific files that a concept needs to explain or preserve.
-
-OttoDoc treats these files as payload, not standalone knowledge. The knowledge about an asset—what it represents, why it matters, how it was produced, and how a reader should use it—belongs in a concept document.
-
-Every asset lives in an `assets/` folder beside its primary owning document or subject. Its filename is lowercase kebab-case with an extension, and at least one concept document must link to it using a relative path. Other documents may link across to the same asset instead of making duplicate copies.
-
-Assets do not appear independently in generated indexes. Readers and agents discover them through the concept that gives them meaning. Validation rejects assets outside an `assets/` folder, Markdown files inside one, nested asset directories, broken asset links, and orphaned assets that no concept document owns. This keeps screenshots, exports, diagrams, and examples from becoming an unexplained file dump.
+Every asset lives in an `assets/` folder beside its primary owning document or subject. Its filename is lowercase kebab-case with an extension, and at least one concept document must link to it. Assets do not appear independently in generated indexes; readers and agents discover them through the concept that gives them meaning. Validation rejects orphaned, misplaced, and misnamed assets.
 
 > [!TIP]
 > **Result:** Supporting files remain discoverable through the knowledge that explains them instead of becoming an unowned file dump.
@@ -147,23 +136,6 @@ This separation prevents one agent from silently deciding what should exist, wri
 
 > [!TIP]
 > **Result:** Documentation receives both accountable judgment and reproducible mechanical checks before it is considered complete.
-
----
-
-## Why use it
-
-OttoDoc is useful when documentation needs to remain trustworthy across many changes and many contributors.
-
-- **Readers know where to look.** A small set of document kinds and generated indexes creates predictable navigation.
-- **Writers know what “done” means.** Templates, required metadata, lint rules, and review criteria replace vague expectations.
-- **Agents receive durable context.** Repository knowledge is structured for retrieval instead of being buried in chats or improvised instruction files.
-- **Changes carry their documentation.** The workflow keeps required docs in the same change or pull request as the implementation.
-- **Review has independence.** A fresh-context reviewer tests whether the result works for someone who did not author it.
-- **Indexes cannot quietly drift.** They are reproducible build products, checked in CI, and never hand-maintained.
-- **Adoption is controlled.** Bootstrap creates missing structure but does not import, rewrite, move, or delete existing documentation.
-- **The system is portable.** Everything authoritative is contained in `docs/_system/` and can be installed in another repository.
-
-OttoDoc is intentionally local and inspectable. It does not require a documentation service, database, hosted portal, or live-system access. The Markdown remains in your repository and evolves through normal version control.
 
 ---
 
@@ -193,422 +165,86 @@ Documentation-only work may inspect the repository, but it may modify only `docs
 
 ---
 
-## Install OttoDoc
+## Install and maintain
 
-### `OttoDoc install`
-
-#### Purpose
-
-Add OttoDoc's canonical documentation system to a repository. As part of initial setup, installation configures one agent platform and creates the initial knowledge tree, generated navigation, platform instructions, and GitHub documentation check without silently rewriting existing documentation.
-
-Open your agent interface at the root of the repository you want to document and name the platform that repository uses.
-
-#### Example
+Open your agent interface at the root of the repository you want to document and name the platform that repository uses:
 
 ```text
 OttoDoc install Codex from https://github.com/coder3814/OttoDoc
 ```
 
-Use `Claude` or `Cursor` instead of `Codex` when appropriate.
+Use `Claude` or `Cursor` instead of `Codex` as appropriate. Your agent retrieves the portable engine into `docs/_system/`, creates the six kind directories and `docs/_intake/`, records the chosen platform in `docs/.ottodoc`, generates the platform's adapters and the GitHub documentation check, and builds the initial indexes. If the repository already contains documentation that does not conform, installation stops with nothing modified—run `OttoDoc check` to see what needs fixing, then install again. Review and commit the installed files.
 
-#### What happens
+The file `docs/.ottodoc` records which platforms are configured; it is the single source of truth the tooling converges the repository against. Platform paths such as `.claude/`, `.codex/`, `.cursor/`, `.agents/`, and `.github/workflows/docs.yml` are generated whole and owned by OttoDoc—never edit them, and never edit inside the `ottodoc:begin`/`ottodoc:end` markers in `CLAUDE.md` or `AGENTS.md`. Everything outside those markers is yours and is preserved byte for byte.
 
-Your agent retrieves the portable engine, configures the platform you selected, creates the initial knowledge tree, generates its navigation, adds the GitHub documentation check, and verifies the result. The implementation is automated by repository-local tooling, but users do not need to invoke that tooling directly.
-
-Only one platform is configured per request. OttoDoc does not guess which agent interface you use or configure every integration automatically. Adding more platforms later is a separate, additive request — see [Add an agent platform](#add-an-agent-platform-to-an-existing-installation).
-
-If the repository already contains documentation that cannot be admitted safely, installation stops without rewriting, moving, or deleting it. The same gate applies when you reinstall after uninstalling: documents written by hand in the meantime, without OttoDoc's frontmatter, will fail the check and installation will refuse rather than modify them. Nothing is lost — the engine is on disk by then, so run `OttoDoc check` to see exactly what needs fixing, then install again.
-
-After installation, the documentation tree begins with this structure:
-
-```text
-docs/
-|-- decisions/
-|   `-- index.md
-|-- design/
-|   `-- index.md
-|-- explanations/
-|   `-- index.md
-|-- plans/
-|   `-- index.md
-|-- reference/
-|   `-- index.md
-|-- runbooks/
-|   `-- index.md
-|-- _intake/
-|-- _system/
-|   `-- ...
-`-- index.md
-```
-
-Each kind exists from the beginning, even when it contains no documents. Its generated `index.md` keeps the directory visible in Git and provides a stable navigation entry point. The installer also creates the empty, durable `_intake/` directory where users place source material for `OttoDoc intake`; consumed files are removed, but the directory remains. As documents are added, OttoDoc regenerates the indexes from the knowledge tree.
-
-Review and commit the installed files. From that point forward, contributors, agents, and CI share the same documentation contract.
-
----
-
-## Upgrade an existing installation
-
-### `OttoDoc upgrade`
-
-#### Purpose
-
-Upgrade an existing OttoDoc installation to the newest canonical engine from the OttoDoc GitHub repository. This operation is distinct from configuring an agent platform and from updating an individual document.
-
-Open your agent interface at the root of the repository where OttoDoc is already installed.
-
-#### Example
-
-```text
-OttoDoc upgrade
-```
-
-#### What happens
-
-Your agent runs the repository-local upgrade tooling. OttoDoc downloads the newest engine from `https://github.com/coder3814/OttoDoc`, validates it, fully replaces `docs/_system/`, refreshes the generated files for **every** configured platform, regenerates navigation, and verifies the resulting installation. The previous engine and generated files are held as a temporary rollback copy until every check passes.
-
-You are not asked which platform is configured. Which platforms an installation has is a fact about the repository, and OttoDoc reads it rather than guessing — so a repository configured for both Codex and Claude gets both refreshed, and one with no platform configured still gets its engine and navigation refreshed.
-
-The command leaves the upgrade as an uncommitted repository diff for review. It does not commit or push unless you request those actions separately.
-
-If the repository contains adapter files for a platform that is not in its configured set, the upgrade reports them and completes anyway rather than refusing. Older versions of `OttoDoc configure` could leave a repository in exactly that state — they wrote the second platform's files and then failed before recording it — so refusing would permanently strand the installations most in need of upgrading. You are told which files and which platform, and you decide: `OttoDoc configure <platform>` to adopt it, or `OttoDoc remove <platform>` to delete the files. The documentation check keeps failing until you do one or the other.
-
-Installations created before `OttoDoc upgrade` existed may not recognize the short command yet. For that one-time transition, use:
-
-```text
-OttoDoc upgrade from https://github.com/coder3814/OttoDoc
-```
-
-After that upgrade, the installed adapter recognizes the short command.
-
-One note about that first upgrade specifically: it is driven by the older upgrade tooling already on disk, which does not know about `AGENTS.md` and `CLAUDE.md`. In the unlikely event that the first upgrade fails partway and rolls back, those two files are the only ones not restored automatically — check them against `git diff` before retrying. Every upgrade after the first restores everything.
-
-Review and commit the upgrade diff after verification succeeds.
-
----
-
-## Add an agent platform to an existing installation
-
-OttoDoc configures one agent platform at install time. When a teammate opens a different tool in the same repository — or you start using one yourself — that tool has no OttoDoc adapters yet and will not follow the documentation contract until you add it.
-
-Open the new agent interface at the repository root and paste:
+Everyday maintenance is four commands, pasted into any configured agent:
 
 ```text
 OttoDoc configure Claude
 ```
 
-Use `Codex` or `Cursor` instead of `Claude` as appropriate. If that agent does not recognize the command, give it the engine's location the same way `install` does:
+adds a platform (additive—platforms already configured are untouched), so a teammate's tool follows the same contract;
 
 ```text
-OttoDoc configure Claude from https://github.com/coder3814/OttoDoc
+OttoDoc remove Cursor
 ```
 
-Adding a platform is additive. Platforms already configured are left exactly as they are, and the CI documentation check begins verifying the new one alongside them.
+decommissions one named platform, deleting its generated files and stripping its shared-file block. Removing your last platform is fine: the engine stays installed and CI keeps checking;
 
-Until someone runs this, an agent on an unconfigured platform is simply unaware of OttoDoc — but enforcement does not depend on it. CI runs the same lint, index, and adapter checks on every change to `docs/` regardless of which tool wrote it, so documentation written past the contract fails the build rather than landing silently.
+```text
+OttoDoc upgrade
+```
+
+replaces `docs/_system/` with the newest engine from GitHub and refreshes every recorded platform. It requires a clean git tree, because git is the undo: every lifecycle command leaves an uncommitted diff for review and none keeps backups;
+
+```text
+OttoDoc uninstall
+```
+
+removes the engine, every platform, the record, and the CI check while preserving every document, index, asset, and `docs/_intake/`. The tree stays conformant, so reinstalling later restores the indexes byte for byte.
+
+The full management specification—the adapter map, the record file, and converge semantics—lives in [`docs/_system/lifecycle.md`](docs/_system/lifecycle.md).
 
 ---
 
 ## OttoDoc command reference
 
-OttoDoc is designed to be used through action commands in your agent conversation. The installed adapter routes each command through the appropriate workflow and handles scaffolding, validation, review, and index generation behind the scenes.
+OttoDoc is used through action commands in your agent conversation. Follow a command with the target, scope, or instructions it needs.
 
-These commands are portable across Claude, Codex, and Cursor:
+Documentation verbs:
 
 | Command | Purpose |
 | --- | --- |
-| `OttoDoc install` | Install the OttoDoc engine and configure its initial agent platform |
-| `OttoDoc upgrade` | Replace an existing OttoDoc engine with the newest version and refresh every configured platform |
-| `OttoDoc configure` | Add or refresh one agent platform, leaving the others untouched |
-| `OttoDoc remove` | Decommission one named agent platform |
-| `OttoDoc uninstall` | Remove the engine and every agent platform, keeping the documentation |
 | `OttoDoc assess` | Assess a completed change for documentation impact |
 | `OttoDoc create` | Create a document of a specified kind |
 | `OttoDoc update` | Update an existing document |
 | `OttoDoc rename` | Rename a document file, repair links, and regenerate indexes |
 | `OttoDoc move` | Move a document and repair affected links |
 | `OttoDoc retire` | Deliberately remove documentation that is no longer live |
-| `OttoDoc intake` | Process one named intake file, or all Intake when no filename is supplied |
+| `OttoDoc intake` | Process one named file from `docs/_intake/`, or all of intake when no filename is supplied |
 | `OttoDoc review` | Perform fresh-context review of a document or documentation change |
 | `OttoDoc check` | Verify the entire documentation system without changing it |
 | `OttoDoc fix` | Resolve reported documentation findings and verify the result |
 | `OttoDoc explain` | Explain an applicable OttoDoc rule or document choice |
 
-Command names are shown in lowercase for consistency. Follow a command with the target, scope, or instructions it needs.
+Lifecycle verbs:
 
-### `OttoDoc configure`
+| Command | Purpose |
+| --- | --- |
+| `OttoDoc install` | Install the OttoDoc engine and configure its initial agent platform |
+| `OttoDoc upgrade` | Replace an existing engine with the newest version and refresh every recorded platform |
+| `OttoDoc configure` | Add or refresh one agent platform, leaving the others untouched |
+| `OttoDoc remove` | Decommission one named agent platform |
+| `OttoDoc uninstall` | Remove the engine and every agent platform, keeping the documentation |
 
-#### Purpose
-
-Add one named agent platform to an existing installation, or refresh it, without installing or upgrading the OttoDoc engine itself.
-
-#### Example
-
-```text
-OttoDoc configure Codex
-```
-
-Use `Claude` or `Cursor` instead of `Codex` when appropriate.
-
-#### What happens
-
-OttoDoc generates the selected platform's adapters and the shared GitHub documentation check from the canonical templates under `docs/_system/integrations/`, then verifies that the generated files match their sources. The command is additive: any platform already configured stays configured and untouched.
-
-Two files are shared rather than owned. Codex needs an `AGENTS.md` and Claude a `CLAUDE.md`, and those files usually already exist and belong to you. OttoDoc contributes a single delimited block to them:
+A few examples:
 
 ```text
-<!-- ottodoc:begin - generated by OttoDoc. Do not edit inside these markers. -->
-...
-<!-- ottodoc:end -->
-```
-
-Everything outside those markers is yours and is never read, rewritten, or reformatted. If the file does not exist, OttoDoc creates it containing just the block. Edit inside the markers and the documentation check will report it as drift.
-
-### `OttoDoc remove`
-
-#### Purpose
-
-Decommission one named agent platform. Use it when a repository stops using a tool, or to clean up adapters left behind by an earlier installation.
-
-#### Example
-
-```text
-OttoDoc remove Cursor
-```
-
-#### What happens
-
-OttoDoc deletes that platform's generated adapters, strips its block from any shared file — deleting the file only if the block was all it contained — and rewrites the CI documentation check so it no longer verifies that platform. Every other platform is untouched.
-
-The platform name is always required. `OttoDoc remove` on its own is not a request to remove everything; OttoDoc asks which platform you mean.
-
-Removing your only configured platform is allowed and does not trigger anything further. OttoDoc stays installed with zero configured platforms: the engine is still on disk, CI still lints the tree and checks the indexes, and you can add a platform back at any time with `OttoDoc configure`.
-
-A file sitting at one of OttoDoc's paths that does not match the canonical engine was not written by OttoDoc, so it is reported rather than deleted. Remove those by hand if you want them gone.
-
-### `OttoDoc uninstall`
-
-#### Purpose
-
-Remove OttoDoc entirely from a repository while keeping every document it helped you write.
-
-#### Example
-
-```text
-OttoDoc uninstall
-```
-
-#### What happens
-
-Your agent confirms with you first, then removes `docs/_system/`, the GitHub documentation check, the adapters for every supported platform, OttoDoc's block from `AGENTS.md` and `CLAUDE.md`, and the governance line at the top of `docs/index.md` so it no longer links to a constitution that is gone.
-
-Everything else stays: every document, every generated index, every asset, and `docs/_intake/` with its contents. The result is left as an uncommitted diff for review — git is the undo.
-
-Because the tree is still conformant afterward, reinstalling restores it exactly. Indexes are regenerated from the documents themselves, so they come back byte-for-byte identical, governance line included.
-
-### `OttoDoc assess`
-
-#### Purpose
-
-Determine whether a completed implementation change requires documentation before declaring the work finished. Use it after changing code, configuration, infrastructure, schemas, workflows, or other repository behavior. OttoDoc inspects the bounded change and relevant repository evidence; it does not assume that every change deserves a document.
-
-#### Example
-
-```text
+OttoDoc create runbook "Rotate the webhook signing key" using repository configuration as evidence
+OttoDoc update docs/explanations/api-authentication.md to match the current implementation
+OttoDoc intake cache-design-notes.md
 OttoDoc assess the change I just completed and update the documentation if needed
 ```
-
-#### What happens
-
-The coordinator may conclude that the current knowledge tree already explains the change or that no durable knowledge was created. When documentation is justified, OttoDoc identifies the affected concepts, delegates authoring and fresh-context review, validates the result, and keeps the documentation in the same change as the implementation.
-
-### `OttoDoc create`
-
-#### Purpose
-
-Add a new, independently useful concept to the knowledge tree. Use it when the knowledge does not belong in an existing document. Specify one of the six document kinds—`runbook`, `reference`, `decision`, `explanation`, `plan`, or `design`—and describe the concept the document must cover.
-
-#### Example
-
-```text
-OttoDoc create decision "Use short-lived preview environments"
-```
-
-You can also provide evidence, constraints, or a desired scope:
-
-```text
-OttoDoc create runbook "Rotate the webhook signing key" using repository configuration and operational code as evidence
-```
-
-#### What happens
-
-OttoDoc confirms that the requested kind fits the reader's question, chooses the correct template and location, checks repository evidence, writes the document, sends it through fresh-context review, validates it, and updates generated navigation. If the concept belongs in an existing document instead, OttoDoc should recommend an update rather than create duplication.
-
-### `OttoDoc update`
-
-#### Purpose
-
-Bring an existing document back into alignment with current repository truth or improve it without changing its fundamental concept. Use it for changed behavior, missing evidence, unclear guidance, or a bounded correction.
-
-#### Example
-
-```text
-OttoDoc update docs/explanations/api-authentication.md to match the current implementation
-```
-
-#### What happens
-
-OttoDoc preserves useful content, verifies repository-defined claims, updates material provenance, performs fresh-context review, validates the document contract, and regenerates affected navigation.
-
-### `OttoDoc rename`
-
-#### Purpose
-
-Change a knowledge document's filename without changing its kind, subject, or content identity. OttoDoc repairs links that point to the old filename and rebuilds generated navigation in the same operation.
-
-#### Example
-
-```text
-OttoDoc rename docs/reference/retry-policy.md to retry-behavior
-```
-
-#### What happens
-
-OttoDoc validates the source and new lowercase kebab-case filename, renames the file in place, repairs relative inbound links, and regenerates all indexes. The execution layer is also available to maintainers as `docs/_system/scripts/rename.ps1 -Path <path> -Slug <new-slug>`.
-
-### `OttoDoc move`
-
-#### Purpose
-
-Relocate a document when its current kind or subject placement makes it misleading or difficult to discover.
-
-#### Example
-
-```text
-OttoDoc move docs/reference/retry-policy.md to the reliability subject
-```
-
-#### What happens
-
-OttoDoc validates the destination, moves the document without changing its identity unnecessarily, repairs inbound and outbound links, removes empty subject folders when appropriate, and regenerates affected indexes.
-
-### `OttoDoc retire`
-
-#### Purpose
-
-Remove a document that is no longer true, needed, or part of the live system. Retirement is deliberate cleanup, not archival.
-
-#### Example
-
-```text
-OttoDoc retire docs/plans/legacy-deployment.md after confirming its useful knowledge exists elsewhere
-```
-
-#### What happens
-
-OttoDoc checks that useful current knowledge is preserved elsewhere, repairs affected links, removes the live file, regenerates navigation, and relies on Git history as the archive.
-
-Documentation is never expired or removed on a timer. A retirement request is assessed as a deliberate repository change, with Git history retained as the archive.
-
-### `OttoDoc intake`
-
-#### Purpose
-
-Turn non-authoritative drafts, notes, and source material into reviewed repository knowledge. Place source files directly in `docs/_intake/`, then invoke the command with one optional filename:
-
-```text
-OttoDoc intake [filename]
-```
-
-#### Examples
-
-Process one file:
-
-```text
-OttoDoc intake cache-design-notes.md
-```
-
-Only that file is assessed and processed. Omit the filename when the intended scope is every file currently in Intake:
-
-Process all Intake:
-
-```text
-OttoDoc intake
-```
-
-#### What happens
-
-The filename must identify one direct child of `docs/_intake/`; paths, directories, multiple filenames, and filename patterns are not valid parameters. Intake remains non-authoritative until the command is invoked. OttoDoc preserves intended meaning and explicitly human-provided facts, checks repository-defined claims, returns material ambiguity to the user, and determines whether the source should produce one document, several documents, updates to existing knowledge, or no live documentation. Successfully consumed source files are removed in the same reviewed change.
-
-### `OttoDoc review`
-
-#### Purpose
-
-Evaluate documentation from the perspective of a future reader who did not author it. Use it on one document or a bounded documentation change when you want an independent assessment of accuracy, usefulness, scope, concision, structure, evidence, and links.
-
-#### Example
-
-```text
-OttoDoc review docs/runbooks/restore-search-index.md
-```
-
-#### What happens
-
-The reviewer checks the requested scope against repository evidence and reports findings. Review is read-only: it does not silently rewrite the document or implementation.
-
-### `OttoDoc check`
-
-#### Purpose
-
-Perform a non-modifying health check of the installed documentation system. Use it before committing documentation, while diagnosing CI failures, or whenever you want a complete list of mechanical violations.
-
-#### Example
-
-```text
-OttoDoc check
-```
-
-#### What happens
-
-OttoDoc verifies directory structure, required metadata and sections, filenames, links, assets, generated navigation, template completion, and adapter consistency.
-
-The result is a report; `OttoDoc check` does not fix the findings or make editorial decisions.
-
-### `OttoDoc fix`
-
-#### Purpose
-
-Resolve a known, bounded set of documentation findings. Use it after `OttoDoc check`, `OttoDoc review`, or a user-provided findings list.
-
-#### Example
-
-```text
-OttoDoc fix the findings from the last documentation check
-```
-
-#### What happens
-
-OttoDoc sends the work through the authoring flow, limits changes to documentation, regenerates navigation where needed, obtains fresh-context review, and verifies the final state.
-
-If a finding requires an implementation change or an unresolved product decision, OttoDoc reports it instead of expanding the documentation task beyond its authority.
-
-### `OttoDoc explain`
-
-#### Purpose
-
-Ask how OttoDoc applies to a documentation question without requesting a repository change. Use it to choose a document kind, understand placement, learn what evidence is expected, or clarify a governance rule.
-
-#### Example
-
-```text
-OttoDoc explain where a proposed design belongs and what evidence it should include
-```
-
-#### What happens
-
-OttoDoc answers from the installed constitution and workflow in the context of the repository. It explains the applicable rule without modifying documentation.
-
-The constitution and workflow remain available for direct inspection, but users can ask OttoDoc to explain the applicable rule in context instead of learning the underlying implementation.
 
 ---
 
@@ -627,6 +263,7 @@ The goal is not to produce more documentation. The goal is to preserve the small
 ## Explore the system
 
 - [`docs/_system/constitution.md`](docs/_system/constitution.md) — the knowledge and governance contract
+- [`docs/_system/lifecycle.md`](docs/_system/lifecycle.md) — the installation and platform management spec
 - [`docs/_system/okf-spec.md`](docs/_system/okf-spec.md) — the open knowledge format specification
 - [`docs/_system/process/workflow.md`](docs/_system/process/workflow.md) — the canonical documentation workflow
 - [`docs/_system/process/coordinator.md`](docs/_system/process/coordinator.md) — coordination and delegation rules
