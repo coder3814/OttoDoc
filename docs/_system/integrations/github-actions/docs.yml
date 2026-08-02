@@ -1,26 +1,18 @@
 # Generated from docs/_system/integrations/github-actions/docs.yml by OttoDoc.
 # Do not edit .github/workflows/docs.yml directly.
-#
-# The line below is the record of which agent platforms are configured. OttoDoc reads
-# it back to know what to refresh, verify, and remove; editing it by hand desynchronizes
-# the installation and fails the adapter check.
-# ottodoc-platforms: {{PLATFORMS}}
 name: docs
 
 # The path filters below deliberately cover every supported platform, not only the
 # configured ones, so that an adapter belonging to an unconfigured platform still
-# triggers the check that reports it as an orphan.
+# triggers the check that reports it as drift.
 on:
   pull_request:
     paths:
       - 'docs/**'
-      - '.claude/agents/doc-*.md'
-      - '.claude/skills/doc/**'
-      - '.agents/skills/documentation/**'
-      - '.codex/agents/doc-*.toml'
-      - '.cursor/agents/doc-*.md'
-      - '.cursor/rules/documentation.mdc'
-      - '.cursor/skills/documentation/**'
+      - '.claude/**'
+      - '.agents/**'
+      - '.codex/**'
+      - '.cursor/**'
       - 'AGENTS.md'
       - 'CLAUDE.md'
       - '.github/workflows/docs.yml'
@@ -28,13 +20,10 @@ on:
     branches: [main]
     paths:
       - 'docs/**'
-      - '.claude/agents/doc-*.md'
-      - '.claude/skills/doc/**'
-      - '.agents/skills/documentation/**'
-      - '.codex/agents/doc-*.toml'
-      - '.cursor/agents/doc-*.md'
-      - '.cursor/rules/documentation.mdc'
-      - '.cursor/skills/documentation/**'
+      - '.claude/**'
+      - '.agents/**'
+      - '.codex/**'
+      - '.cursor/**'
       - 'AGENTS.md'
       - 'CLAUDE.md'
       - '.github/workflows/docs.yml'
@@ -48,14 +37,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify documentation adapters
+      - name: Check the documentation system
         shell: pwsh
-        run: ./docs/_system/scripts/check-adapters.ps1
-
-      - name: Lint the knowledge tree
-        shell: pwsh
-        run: ./docs/_system/scripts/lint.ps1
-
-      - name: Verify indexes match regeneration
-        shell: pwsh
-        run: ./docs/_system/scripts/regen.ps1 -Check
+        run: |
+          ./docs/_system/scripts/lint.ps1
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          ./docs/_system/scripts/regen.ps1 -Check
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          ./docs/_system/scripts/check-adapters.ps1
+          if ($LASTEXITCODE -ne 0) { exit 1 }

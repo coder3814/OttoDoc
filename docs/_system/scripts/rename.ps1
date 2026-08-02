@@ -1,5 +1,4 @@
-# Knowledge-document rename. Part of the engine (constitution section 9):
-# changed only on the repository owner's explicit request.
+# Knowledge-document rename. Part of the OttoDoc engine.
 # Renames one concept document in place, repairs inbound Markdown links, and regenerates indexes.
 #
 #   rename.ps1 -Path docs/reference/retry-policy.md -Slug retry-behavior

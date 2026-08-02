@@ -1,5 +1,4 @@
-# New-document scaffold (constitution section 8 via the /doc skill). Part of the engine (section 9):
-# changed only on the repository owner's explicit request.
+# New-document scaffold (constitution section 8 via the /doc skill). Part of the OttoDoc engine.
 # Creates a concept doc from its kind's template, in the correct directory.
 #
 #   scaffold.ps1 -Kind runbook -Slug prod-search-reindex -Title "Prod search reindex" -Actor "claude/fable-5"

@@ -1,5 +1,4 @@
-# Index regeneration (constitution section 4). Part of the engine (section 9):
-# changed only on the repository owner's explicit request.
+# Index regeneration (constitution section 4). Part of the OttoDoc engine.
 # Indexes are build products carrying zero original information - this script is their only author.
 # Deterministic by law: same tree in, same bytes out (UTF-8 no BOM, LF, ordinal ordering).
 #

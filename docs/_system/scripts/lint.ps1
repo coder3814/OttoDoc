@@ -1,5 +1,4 @@
-# Documentation tree linter (constitution section 8, mechanical enforcement). Part of the engine (section 9):
-# changed only on the repository owner's explicit request.
+# Documentation tree linter (constitution section 8, mechanical enforcement). Part of the OttoDoc engine.
 # Checks the knowledge tree only; _system/ and _intake/ are exempt by law (section 1 amendment 5).
 # Template-hygiene checks (REPLACE description, replace-me tag, {{ placeholders) are deliberate
 # extras beyond the constitution's text - they catch a scaffold left unfinished.
