@@ -18,7 +18,7 @@ Split when major sections have independent entry conditions, prerequisites, risk
 
 ## The craft
 
-- Write the `description` as the one-sentence discovery surface: it lets a reader decide whether to open the document.
+- Write the `description` as the one-sentence discovery surface: it lets a reader decide whether to open the document. Name the subject *and* the class of task the document bears on — what it constrains, decides, or enables — so an agent doing unrelated-looking work recognizes from the sentence alone that the document governs that work (constitution §3).
 - Begin the body with `# <title>` and a mandatory `## Summary`: normally two to four sentences explaining what the document covers, its intent, how the reader uses it, and its principal outcome or conclusion.
 - Write for humans and agents through progressive detail. Put essential orientation first, task-specific detail at the point of use, and exhaustive implementation detail in its canonical repository source.
 - Include only material that supports the document's primary reader question. Every section must earn its place. More than roughly 1,500 words or eight H2 sections triggers explicit scope review, not automatic failure.

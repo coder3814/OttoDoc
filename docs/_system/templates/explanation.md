@@ -1,7 +1,7 @@
 ---
 type: Explanation
 title: "{{TITLE}}"
-description: "REPLACE: one sentence; a reader must be able to decide from it alone whether to open this doc"
+description: "REPLACE: one sentence naming the subject and the class of task it bears on, so a reader decides from it alone whether to open this doc"
 tags: [replace-me]
 generated:
   by: "{{ACTOR}}"
