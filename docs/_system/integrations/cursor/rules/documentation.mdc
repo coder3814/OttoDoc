@@ -1,7 +1,21 @@
 ---
-description: Apply the portable documentation engine after system changes and during documentation work.
+description: Consult the documentation tree during every task, and apply the portable documentation engine after system changes.
 globs:
 alwaysApply: true
 ---
 
-This is a generated Cursor adapter. Follow `docs/_system/constitution.md` for every documentation judgment. After every completed system-modifying task, read `docs/_system/process/coordinator.md` and perform its bounded documentation-impact assessment. Use the `doc-coordinator`, `doc-author`, and `doc-reviewer` subagents when the canonical workflow requests those roles.
+This is a generated Cursor adapter.
+
+## Using the documentation
+
+`docs/` is this repository's knowledge tree, governed by `docs/_system/constitution.md`. Consult it before planning, implementing, or answering from code, memory, or an issue tracker.
+
+Route from the root. `docs/index.md` names the six kinds and the reader question each answers; every index below it describes its documents one sentence apiece, written so that sentence alone tells you whether to open the file. A kind index shows a subject subfolder as a count, not a description — descend into it rather than concluding its subject is undocumented. Open the documents whose descriptions bear on the task, never a whole directory. To search across kinds, grep the frontmatter `tags`, `type`, and `description` fields; the tree has no other search surface.
+
+Documents own intent, rationale, and facts about the world outside this repository. For the repository's own current state, the code is authoritative — where a document disagrees with the code, the document is out of date, and reporting that is part of finishing the task.
+
+Absence is not evidence. The tree holds only what some task required, so an undocumented subject is an unwritten document, not an unconstrained one.
+
+## Maintaining the documentation
+
+After every completed system-modifying task, read `docs/_system/process/coordinator.md` and perform its bounded documentation-impact assessment. Follow `docs/_system/constitution.md` for every documentation judgment. Use the `doc-coordinator`, `doc-author`, and `doc-reviewer` subagents when the canonical workflow requests those roles.
