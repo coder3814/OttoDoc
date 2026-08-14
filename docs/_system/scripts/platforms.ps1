@@ -281,6 +281,10 @@ function ConvertTo-CanonicalJson {
     # unicode escaping of printable text. ConvertTo-Json is avoided because its
     # formatting and escaping differ between Windows PowerShell 5.1 and pwsh,
     # which would make the merged file depend on which shell converged it.
+    # One divergence this writer cannot close: pwsh's ConvertFrom-Json revives
+    # date-like strings as DateTime, so a value already lost its original literal
+    # before arriving here. Converge only ever writes when the registration is
+    # absent, so a settled file is never reformatted.
     param($Value, [int]$Depth = 0)
     if ($null -eq $Value) { return 'null' }
     if ($Value -is [bool]) { if ($Value) { return 'true' } else { return 'false' } }
@@ -291,6 +295,11 @@ function ConvertTo-CanonicalJson {
         # preserves the instant and its zone; a shorter format would silently drop the
         # owner's UTC marker or offset.
         return (ConvertTo-JsonStringLiteral ($Value.ToString('o', [System.Globalization.CultureInfo]::InvariantCulture)))
+    }
+    if ($Value -is [double] -or $Value -is [single]) {
+        # Round-trip format: the default formats to 15 significant digits, which both
+        # alters large owner values and can emit a literal that overflows on reparse.
+        return $Value.ToString('R', [System.Globalization.CultureInfo]::InvariantCulture)
     }
     if ($Value -is [System.ValueType]) {
         return [string][System.Convert]::ToString($Value, [System.Globalization.CultureInfo]::InvariantCulture)
@@ -362,10 +371,22 @@ function Remove-OttodocSettingsHook {
     if ($null -ne $eventGroups) {
         $keptGroups = @()
         foreach ($group in @($eventGroups)) {
-            if ($null -eq $group) { continue }
-            $entries = @(Get-JsonProperty $group 'hooks')
+            # Read the hook list off the property, never off Get-JsonProperty: an absent
+            # or null list comes back as a pipeline $null that @() turns into a
+            # one-element array, which would then read as a list OttoDoc just emptied -
+            # and dissolve a group it never touched. Absent is not emptied.
+            $entries = $null
+            if (Test-JsonObject $group) {
+                $property = $group.PSObject.Properties['hooks']
+                if ($null -ne $property) { $entries = $property.Value }
+            }
+            # Anything that cannot hold the registration is the owner's: pass it through
+            # untouched rather than rewriting or dropping it.
+            if ($null -eq $entries) { $keptGroups += , $group; continue }
+
+            $entries = @($entries)
             $kept = @($entries | Where-Object {
-                $null -ne $_ -and -not (((Get-JsonProperty $_ 'type') -eq 'command') -and ((Get-JsonProperty $_ 'command') -eq $Command))
+                -not ((Test-JsonObject $_) -and ((Get-JsonProperty $_ 'type') -eq 'command') -and ((Get-JsonProperty $_ 'command') -eq $Command))
             })
             if ($kept.Count -ne $entries.Count) {
                 $changed = $true
@@ -487,11 +508,18 @@ function Invoke-PlatformConverge {
             $unreadable = $false
             if (Test-Path -LiteralPath $target -PathType Leaf) {
                 $raw = [System.IO.File]::ReadAllText($target)
-                if ($raw.Trim() -ne '') {
-                    try { $settings = ConvertFrom-Json -InputObject $raw -ErrorAction Stop }
-                    catch { $unreadable = $true }
+                $trimmed = $raw.Trim()
+                if ($trimmed -ne '') {
                     # Only a JSON object can carry the registration. Anything else is the
-                    # owner's data in a shape OttoDoc must not rewrite.
+                    # owner's data in a shape OttoDoc must not rewrite. The text is checked
+                    # before parsing because pwsh's ConvertFrom-Json enumerates a top-level
+                    # array, handing back its single element as though the file had been an
+                    # object all along - which would rewrite the owner's array as an object.
+                    if (-not $trimmed.StartsWith('{')) { $unreadable = $true }
+                    if (-not $unreadable) {
+                        try { $settings = ConvertFrom-Json -InputObject $raw -ErrorAction Stop }
+                        catch { $unreadable = $true }
+                    }
                     if (-not $unreadable -and -not (Test-JsonObject $settings)) { $unreadable = $true }
                 }
             }

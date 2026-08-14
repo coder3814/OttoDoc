@@ -87,10 +87,20 @@ try {
     & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
     Assert ((Read-Text $settingsPath) -eq $settingsBefore) 'converge is idempotent on settings.json'
 
-    # --- another tool's hooks survive, and only OttoDoc's entry leaves the shared group ---
-    [System.IO.File]::WriteAllText($settingsPath, '{"hooks":{"UserPromptSubmit":[{"hooks":[{"type":"command","command":"node .claude/hooks/doc-routing.js"},{"type":"command","command":"echo theirs"}]}]}}')
+    # --- removal takes OttoDoc's entry and nothing else: a group it shares with
+    #     another tool keeps that tool's entry, and a foreign group that carries no
+    #     hook list at all must survive untouched rather than read as one OttoDoc
+    #     just emptied ---
+    [System.IO.File]::WriteAllText($settingsPath, '{"hooks":{"UserPromptSubmit":[{"matcher":"Bash"},{"hooks":[{"type":"command","command":"node .claude/hooks/doc-routing.js"},{"type":"command","command":"echo theirs"}]}]}}')
     & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'a hand-merged shared hook group reads as converged'
+    & (Join-Path $scripts 'remove-platform.ps1') -Platform Claude | Out-Null
+    Assert (Test-Path $settingsPath) 'removal does not delete a settings.json holding owner groups'
+    $settings = Read-Text $settingsPath
+    Assert (-not $settings.Contains('doc-routing.js')) 'removal strips OttoDoc''s entry from the shared group'
+    Assert ($settings.Contains('echo theirs')) 'the other tool''s entry in the shared group survives removal'
+    Assert ($settings.Contains('"matcher"')) 'a foreign group carrying no hook list survives removal'
+    & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
 
     # --- an empty or null value at the hook path is merged into, not crashed on ---
     [System.IO.File]::WriteAllText($settingsPath, '{"hooks":{"UserPromptSubmit":[]}}')
@@ -98,15 +108,21 @@ try {
     Assert ($LASTEXITCODE -eq 0) 'converge survives an empty UserPromptSubmit array'
     Assert ((Read-Text $settingsPath).Contains('doc-routing.js')) 'hook merged into an empty UserPromptSubmit array'
 
-    # --- a settings file OttoDoc cannot own is refused, never rewritten ---
+    # --- a settings file OttoDoc cannot own is refused, never rewritten: both the
+    #     unparseable case and valid JSON that is not an object ---
     [System.IO.File]::WriteAllText($settingsPath, '{not json')
     & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
     Assert ($LASTEXITCODE -ne 0) 'converge refuses an unparseable settings.json'
     Assert ((Read-Text $settingsPath) -eq '{not json') 'the refused settings.json is left untouched'
 
+    [System.IO.File]::WriteAllText($settingsPath, '[{"a":1}]')
+    & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
+    Assert ($LASTEXITCODE -ne 0) 'converge refuses a settings.json that is a JSON array'
+    Assert ((Read-Text $settingsPath) -eq '[{"a":1}]') 'the refused JSON array is left untouched'
+
     # --- but an unconfigured platform is not blocked by a file it has no stake in ---
     & (Join-Path $scripts 'remove-platform.ps1') -Platform Claude | Out-Null
-    Assert ($LASTEXITCODE -eq 0) 'removing Claude ignores its unparseable settings.json'
+    Assert ($LASTEXITCODE -eq 0) 'removing Claude ignores a settings.json it cannot own'
     [System.IO.File]::WriteAllText($settingsPath, '{"permissions":{"allow":["Bash"]}}')
     & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'configure Claude again after the refusal'
