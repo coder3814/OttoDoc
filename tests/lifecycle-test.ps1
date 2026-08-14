@@ -53,6 +53,11 @@ try {
     $agentsPath = Join-Path $repo 'AGENTS.md'
     [System.IO.File]::WriteAllText($agentsPath, "# Owner heading`n`n" + (Read-Text $agentsPath) + "`nOwner trailing note.`n")
 
+    # Owner settings that must survive the hook merge.
+    $settingsPath = Join-Path $repo '.claude\settings.json'
+    New-Item -ItemType Directory -Path (Join-Path $repo '.claude') -Force | Out-Null
+    [System.IO.File]::WriteAllText($settingsPath, '{"permissions":{"allow":["Bash"]}}')
+
     & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'configure -Platform Claude exits 0'
     Assert ((Read-Record) -eq 'platforms: Claude, Codex') 'record is "platforms: Claude, Codex"'
@@ -61,9 +66,21 @@ try {
     Assert ($agents.Contains('ottodoc:begin')) 'AGENTS.md block still present'
     Assert ((Test-Path (Join-Path $repo 'CLAUDE.md')) -and (Read-Text (Join-Path $repo 'CLAUDE.md')).Contains('ottodoc:begin')) 'CLAUDE.md block appears'
     Assert (Test-Path (Join-Path $repo '.claude\skills\ottodoc-uninstall\SKILL.md')) 'Claude per-verb slash skill written'
+    Assert (Test-Path (Join-Path $repo '.claude\hooks\doc-routing.js')) 'Claude routing hook script written'
+    $settings = Read-Text $settingsPath
+    Assert ($settings.Contains('"Bash"')) 'owner settings survive the hook merge'
+    Assert ($settings.Contains('doc-routing.js') -and $settings.Contains('UserPromptSubmit')) 'settings.json carries the routing hook'
 
     & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'check passes with two platforms'
+
+    # --- a stripped hook registration is drift; converge re-merges it ---
+    [System.IO.File]::WriteAllText($settingsPath, '{"permissions":{"allow":["Bash"]}}')
+    & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
+    Assert ($LASTEXITCODE -ne 0) 'check fails when the settings hook is stripped'
+    & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
+    $settings = Read-Text $settingsPath
+    Assert ($settings.Contains('"Bash"') -and $settings.Contains('doc-routing.js')) 'converge re-merges the hook beside owner settings'
 
     # --- check actually detects drift, and converge repairs it ---
     $ownedPath = Join-Path $repo '.claude\skills\ottodoc-check\SKILL.md'
@@ -89,8 +106,16 @@ try {
     Assert ($LASTEXITCODE -eq 0) 'remove -Platform Claude exits 0'
     Assert ((Read-Record) -eq 'platforms:') 'record shows zero platforms'
     Assert (-not (Test-Path (Join-Path $repo 'CLAUDE.md'))) 'CLAUDE.md deleted (block was all it held)'
+    Assert (-not (Test-Path (Join-Path $repo '.claude\hooks\doc-routing.js'))) 'routing hook script removed'
+    $settings = Read-Text $settingsPath
+    Assert ($settings.Contains('"Bash"') -and -not $settings.Contains('doc-routing.js')) 'owner settings survive remove with the hook stripped'
     & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'check passes with zero platforms'
+
+    # From here the owner settings are no longer needed: delete them so the later
+    # uninstall can prove a settings file OttoDoc alone created is deleted outright.
+    Remove-Item -LiteralPath $settingsPath -Force
+    Remove-Item -LiteralPath (Join-Path $repo '.claude') -Force
 
     # --- a real document, then Claude back for the upgrade test ---
     $doc = @'
@@ -119,6 +144,7 @@ The answer is 42.
     Assert ($LASTEXITCODE -eq 0) 'regen accepts the test document'
     & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'configure Claude again exits 0'
+    Assert ((Test-Path $settingsPath) -and (Read-Text $settingsPath).Contains('doc-routing.js')) 'settings.json created fresh when absent'
 
     # --- upgrade from a local archive; clean-tree gate first ---
     $pkg = Join-Path $work 'pkg\docs'

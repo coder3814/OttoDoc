@@ -16,20 +16,33 @@ It lives outside `_system/` so it survives engine replacement, is committed like
 
 Every OttoDoc verb except `install` — the fifteen command verbs `assess`, `create`, `update`, `rename`, `move`, `retire`, `intake`, `review`, `check`, `fix`, `explain`, `upgrade`, `configure`, `remove`, and `uninstall` — is generated as one slash-command adapter per platform: a `/ottodoc-<verb>` skill on Claude, an `ottodoc-<verb>` skill on Codex (invoked as `$ottodoc-<verb>`, since Codex has no repository-level slash commands), and a `/ottodoc-<verb>` command on Cursor. `install` has no adapter because it necessarily runs before any adapter exists.
 
-| Platform | Owned files - generated whole | Shared file - OttoDoc block only |
+| Platform | Owned files - generated whole | Shared files - OttoDoc block or hook entry only |
 |---|---|---|
-| Claude | `.claude/agents/doc-coordinator.md`, `.claude/agents/doc-author.md`, `.claude/agents/doc-reviewer.md`, `.claude/skills/ottodoc-<verb>/SKILL.md` per command verb | `CLAUDE.md` |
+| Claude | `.claude/agents/doc-coordinator.md`, `.claude/agents/doc-author.md`, `.claude/agents/doc-reviewer.md`, `.claude/hooks/doc-routing.js`, `.claude/skills/ottodoc-<verb>/SKILL.md` per command verb | `CLAUDE.md`, `.claude/settings.json` |
 | Codex | `.codex/agents/doc-coordinator.toml`, `.codex/agents/doc-author.toml`, `.codex/agents/doc-reviewer.toml`, `.agents/skills/ottodoc-<verb>/SKILL.md` per command verb | `AGENTS.md` |
 | Cursor | `.cursor/rules/documentation.mdc`, `.cursor/skills/documentation/SKILL.md`, `.cursor/agents/doc-coordinator.md`, `.cursor/agents/doc-author.md`, `.cursor/agents/doc-reviewer.md`, `.cursor/commands/ottodoc-<verb>.md` per command verb | none |
 | every configuration | `.github/workflows/docs.yml` | - |
 
 **Ownership of mapped paths is absolute.** The owned paths above belong to OttoDoc: converge overwrites and removes them without inspecting their content. Do not put your own files at these paths, and never edit a generated file directly — the next converge erases the edit.
 
+## Prompt-time routing
+
+The static "Using the documentation" block alone does not reliably make agents route from the knowledge tree on judgment tasks — evaluating a backlog, prioritizing work — because instructions resting in static context lose to task momentum. Where a platform offers a prompt-time extension point, OttoDoc therefore also injects the routing obligation into every user prompt.
+
+On Claude, that surface is a `UserPromptSubmit` hook: the owned script `.claude/hooks/doc-routing.js` emits the obligation as `additionalContext`, and converge merges its registration — one command entry running `node .claude/hooks/doc-routing.js` — into the shared `.claude/settings.json`. The injected text is platform-generic and complements the `CLAUDE.md` block; it does not replace it.
+
+> [!IMPORTANT]
+> Project-settings hooks do not execute in headless Claude Code sessions (`claude -p`) until the project has been trusted once interactively. Open the project in an interactive session and approve the one-time prompt, or headless agents silently run without the routing hook.
+
+Codex and Cursor currently expose no equivalent prompt-time extension point, so those platforms carry only the static block or rule. That is a known, deliberate gap: when such an extension point appears, the same obligation should be injected there rather than approximated with more static text.
+
 ## Converge
 
 Every lifecycle command shares one routine: read the record, then make disk match it for each supported platform. Configured — write the platform's owned files from the canon under `_system/integrations/` and upsert its block in the shared file. Not configured — delete its owned files and strip its block, deleting the shared file only when the block was all it held. The CI workflow is rendered unconditionally. `-Check` computes the same desired state and reports differences without writing anything, exiting nonzero on drift.
 
 **Marker blocks.** In shared files (`CLAUDE.md`, `AGENTS.md`) OttoDoc owns exactly one block delimited by lines containing the bare tokens `ottodoc:begin` and `ottodoc:end`. Everything outside the block is the owner's and is preserved — content, newline convention, and BOM alike. A duplicate or unterminated block is a hard error, resolved by hand rather than guessed at.
+
+**Settings hooks.** In shared JSON settings files (`.claude/settings.json`) OttoDoc owns exactly one hook registration, recognized by its command string; every other setting is the owner's and its value is preserved. JSON carries no comment markers, so when the entry is added or removed the whole file is re-serialized as canonical two-space JSON — the owner's values survive, but not their formatting. A file that is not valid JSON is a hard error, resolved by hand. When the registration was all the file held, removal deletes the file.
 
 ## Commands
 

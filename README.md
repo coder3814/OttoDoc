@@ -177,6 +177,11 @@ Use `Claude` or `Cursor` instead of `Codex` as appropriate. Install is the one c
 
 The file `docs/.ottodoc` records which platforms are configured; it is the single source of truth the tooling converges the repository against. Platform paths such as `.claude/`, `.codex/`, `.cursor/`, `.agents/`, and `.github/workflows/docs.yml` are generated whole and owned by OttoDoc—never edit them, and never edit inside the `ottodoc:begin`/`ottodoc:end` markers in `CLAUDE.md` or `AGENTS.md`. Everything outside those markers is yours and is preserved byte for byte.
 
+On Claude, OttoDoc also installs a prompt-time routing hook, because static context alone does not reliably make agents consult the tree on judgment tasks: the generated `.claude/hooks/doc-routing.js` injects the documentation-routing obligation into every user prompt, and one `UserPromptSubmit` entry is merged into `.claude/settings.json`—that entry is OttoDoc's, the rest of the file stays yours.
+
+> [!WARNING]
+> Project-settings hooks do not run in headless Claude Code sessions (`claude -p`) until the project has been trusted once interactively. Open the repository in an interactive Claude Code session and approve the one-time prompt; until then, headless agents silently run without the routing hook.
+
 Everyday maintenance is four slash commands, typed into any configured agent:
 
 ```text
