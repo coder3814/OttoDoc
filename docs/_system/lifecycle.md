@@ -42,7 +42,9 @@ Every lifecycle command shares one routine: read the record, then make disk matc
 
 **Marker blocks.** In shared files (`CLAUDE.md`, `AGENTS.md`) OttoDoc owns exactly one block delimited by lines containing the bare tokens `ottodoc:begin` and `ottodoc:end`. Everything outside the block is the owner's and is preserved — content, newline convention, and BOM alike. A duplicate or unterminated block is a hard error, resolved by hand rather than guessed at.
 
-**Settings hooks.** In shared JSON settings files (`.claude/settings.json`) OttoDoc owns exactly one hook registration, recognized by its command string; every other setting is the owner's and its value is preserved. JSON carries no comment markers, so when the entry is added or removed the whole file is re-serialized as canonical two-space JSON — the owner's values survive, but not their formatting. A file that is not valid JSON is a hard error, resolved by hand. When the registration was all the file held, removal deletes the file.
+**Settings hooks.** In shared JSON settings files (`.claude/settings.json`) OttoDoc owns exactly one hook registration, recognized by its command string; every other setting is the owner's and its value is preserved. JSON carries no comment markers, so when the entry is added or removed the whole file is re-serialized as canonical two-space JSON — the owner's values survive, but not their formatting. A file already carrying the registration is left untouched byte for byte. When the registration was all the file held, removal deletes the file.
+
+A settings file that is not a JSON object — unparseable, or a JSON array or scalar — is a hard error for the platform that owns it, resolved by hand; converge refuses rather than rewriting a file it cannot read. A platform that is *not* configured ignores such a file entirely, exactly as a shared markdown file carrying no OttoDoc block is ignored: an owner who never configured that platform is never blocked by it.
 
 ## Commands
 

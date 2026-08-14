@@ -82,6 +82,35 @@ try {
     $settings = Read-Text $settingsPath
     Assert ($settings.Contains('"Bash"') -and $settings.Contains('doc-routing.js')) 'converge re-merges the hook beside owner settings'
 
+    # --- converge leaves a settings file that already carries the hook untouched ---
+    $settingsBefore = Read-Text $settingsPath
+    & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
+    Assert ((Read-Text $settingsPath) -eq $settingsBefore) 'converge is idempotent on settings.json'
+
+    # --- another tool's hooks survive, and only OttoDoc's entry leaves the shared group ---
+    [System.IO.File]::WriteAllText($settingsPath, '{"hooks":{"UserPromptSubmit":[{"hooks":[{"type":"command","command":"node .claude/hooks/doc-routing.js"},{"type":"command","command":"echo theirs"}]}]}}')
+    & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
+    Assert ($LASTEXITCODE -eq 0) 'a hand-merged shared hook group reads as converged'
+
+    # --- an empty or null value at the hook path is merged into, not crashed on ---
+    [System.IO.File]::WriteAllText($settingsPath, '{"hooks":{"UserPromptSubmit":[]}}')
+    & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
+    Assert ($LASTEXITCODE -eq 0) 'converge survives an empty UserPromptSubmit array'
+    Assert ((Read-Text $settingsPath).Contains('doc-routing.js')) 'hook merged into an empty UserPromptSubmit array'
+
+    # --- a settings file OttoDoc cannot own is refused, never rewritten ---
+    [System.IO.File]::WriteAllText($settingsPath, '{not json')
+    & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
+    Assert ($LASTEXITCODE -ne 0) 'converge refuses an unparseable settings.json'
+    Assert ((Read-Text $settingsPath) -eq '{not json') 'the refused settings.json is left untouched'
+
+    # --- but an unconfigured platform is not blocked by a file it has no stake in ---
+    & (Join-Path $scripts 'remove-platform.ps1') -Platform Claude | Out-Null
+    Assert ($LASTEXITCODE -eq 0) 'removing Claude ignores its unparseable settings.json'
+    [System.IO.File]::WriteAllText($settingsPath, '{"permissions":{"allow":["Bash"]}}')
+    & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
+    Assert ($LASTEXITCODE -eq 0) 'configure Claude again after the refusal'
+
     # --- check actually detects drift, and converge repairs it ---
     $ownedPath = Join-Path $repo '.claude\skills\ottodoc-check\SKILL.md'
     [System.IO.File]::WriteAllText($ownedPath, 'tampered')

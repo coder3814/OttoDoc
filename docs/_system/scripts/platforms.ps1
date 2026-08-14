@@ -224,14 +224,35 @@ function Write-SharedFile {
 # so there are no markers; the file is re-serialized deterministically
 # (canonical two-space JSON) whenever the entry is added or removed.
 
+function Test-JsonObject {
+    # True for a parsed JSON object. Arrays, strings, and numbers are not objects
+    # and cannot carry properties, so they are refused rather than written through.
+    param($Value)
+    return ($Value -is [System.Management.Automation.PSCustomObject])
+}
+
 function Get-JsonProperty {
-    # A property value from a parsed JSON object, or $null when absent or the
-    # parent is not an object. Safe under StrictMode.
+    # A property value from a parsed JSON object, or $null when absent or the parent
+    # is not an object. Safe under StrictMode. The value is returned through the
+    # pipeline, so a list unrolls and every caller can enumerate it with @(...);
+    # an empty list therefore reads the same as an absent one, which is why writers
+    # go through Set-JsonProperty rather than branching on this result.
     param($Object, [string]$Name)
-    if ($null -eq $Object) { return $null }
+    if (-not (Test-JsonObject $Object)) { return $null }
     $property = $Object.PSObject.Properties[$Name]
     if ($null -eq $property) { return $null }
     return $property.Value
+}
+
+function Set-JsonProperty {
+    # Sets a property on a parsed JSON object, adding it only when the property is
+    # genuinely absent. Add-Member throws on a member that already exists, and a
+    # property holding null or an empty list reads as absent through Get-JsonProperty -
+    # so the decision is made against the property, never against its value.
+    param($Object, [string]$Name, $Value)
+    $property = $Object.PSObject.Properties[$Name]
+    if ($null -eq $property) { $Object | Add-Member -MemberType NoteProperty -Name $Name -Value $Value }
+    else { $property.Value = $Value }
 }
 
 function ConvertTo-JsonStringLiteral {
@@ -264,9 +285,12 @@ function ConvertTo-CanonicalJson {
     if ($null -eq $Value) { return 'null' }
     if ($Value -is [bool]) { if ($Value) { return 'true' } else { return 'false' } }
     if ($Value -is [string] -or $Value -is [char]) { return (ConvertTo-JsonStringLiteral ([string]$Value)) }
-    if ($Value -is [datetime]) {
-        # pwsh's ConvertFrom-Json revives ISO-dated strings as DateTime; round-trip them.
-        return (ConvertTo-JsonStringLiteral ($Value.ToString('yyyy-MM-ddTHH:mm:ss')))
+    if ($Value -is [datetime] -or $Value -is [datetimeoffset]) {
+        # pwsh's ConvertFrom-Json revives ISO-dated strings as DateTime, so an owner's
+        # date-like string arrives here already parsed. The round-trip ("o") format
+        # preserves the instant and its zone; a shorter format would silently drop the
+        # owner's UTC marker or offset.
+        return (ConvertTo-JsonStringLiteral ($Value.ToString('o', [System.Globalization.CultureInfo]::InvariantCulture)))
     }
     if ($Value -is [System.ValueType]) {
         return [string][System.Convert]::ToString($Value, [System.Globalization.CultureInfo]::InvariantCulture)
@@ -307,26 +331,24 @@ function Test-OttodocSettingsHook {
 
 function Add-OttodocSettingsHook {
     # Returns the settings object with OttoDoc's hook group appended under the event,
-    # leaving every other property of the owner's untouched.
-    param($Settings, [string]$EventName, [string]$Command)
-    if ($null -eq $Settings) { $Settings = New-Object PSObject }
+    # leaving every other property of the owner's untouched. A `hooks` value that is
+    # not a JSON object cannot hold the registration and is refused rather than
+    # silently replaced - it is the owner's data.
+    param($Settings, [string]$EventName, [string]$Command, [string]$Label)
+    if ($null -eq $Settings) { $Settings = [PSCustomObject]@{} }
     $hooks = Get-JsonProperty $Settings 'hooks'
     if ($null -eq $hooks) {
-        $hooks = New-Object PSObject
-        $Settings | Add-Member -MemberType NoteProperty -Name 'hooks' -Value $hooks
+        $hooks = [PSCustomObject]@{}
+        Set-JsonProperty -Object $Settings -Name 'hooks' -Value $hooks
     }
-    $entry = New-Object PSObject
-    $entry | Add-Member -MemberType NoteProperty -Name 'type' -Value 'command'
-    $entry | Add-Member -MemberType NoteProperty -Name 'command' -Value $Command
-    $group = New-Object PSObject
-    $group | Add-Member -MemberType NoteProperty -Name 'hooks' -Value @($entry)
+    elseif (-not (Test-JsonObject $hooks)) {
+        throw ('{0}: "hooks" is not a JSON object - fix it by hand' -f $Label)
+    }
+    $entry = [PSCustomObject][ordered]@{ type = 'command'; command = $Command }
+    $group = [PSCustomObject][ordered]@{ hooks = @($entry) }
     $eventGroups = Get-JsonProperty $hooks $EventName
-    if ($null -eq $eventGroups) {
-        $hooks | Add-Member -MemberType NoteProperty -Name $EventName -Value @($group)
-    }
-    else {
-        $hooks.PSObject.Properties[$EventName].Value = @($eventGroups) + @($group)
-    }
+    if ($null -eq $eventGroups) { Set-JsonProperty -Object $hooks -Name $EventName -Value @($group) }
+    else { Set-JsonProperty -Object $hooks -Name $EventName -Value (@($eventGroups) + @($group)) }
     return $Settings
 }
 
@@ -462,20 +484,29 @@ function Invoke-PlatformConverge {
             $eventName = [string]$adapter['SettingsEvent']
             $command = [string]$adapter['SettingsCommand']
             $settings = $null
+            $unreadable = $false
             if (Test-Path -LiteralPath $target -PathType Leaf) {
                 $raw = [System.IO.File]::ReadAllText($target)
                 if ($raw.Trim() -ne '') {
                     try { $settings = ConvertFrom-Json -InputObject $raw -ErrorAction Stop }
-                    catch { throw ('{0}: not valid JSON - fix it by hand' -f $settingsTarget) }
+                    catch { $unreadable = $true }
+                    # Only a JSON object can carry the registration. Anything else is the
+                    # owner's data in a shape OttoDoc must not rewrite.
+                    if (-not $unreadable -and -not (Test-JsonObject $settings)) { $unreadable = $true }
                 }
             }
+            # Unconfigured platforms leave a file they cannot parse alone: nothing of
+            # OttoDoc's is reachable in it, and an owner who never configured this
+            # platform should not be blocked by a file OttoDoc has no stake in.
+            if ($unreadable -and -not $isConfigured) { continue }
+            if ($unreadable) { throw ('{0}: not a JSON object - fix it by hand' -f $settingsTarget) }
             $hasHook = Test-OttodocSettingsHook -Settings $settings -EventName $eventName -Command $command
 
             if ($isConfigured) {
                 if (-not $hasHook) {
                     $drift += ('{0}: OttoDoc hook missing' -f $settingsTarget)
                     if (-not $Check) {
-                        $merged = Add-OttodocSettingsHook -Settings $settings -EventName $eventName -Command $command
+                        $merged = Add-OttodocSettingsHook -Settings $settings -EventName $eventName -Command $command -Label $settingsTarget
                         $directory = Split-Path -Parent $target
                         if (-not (Test-Path -LiteralPath $directory)) { New-Item -ItemType Directory -Path $directory -Force | Out-Null }
                         Write-Utf8LfFile -Path $target -Content ((ConvertTo-CanonicalJson $merged) + "`n")
