@@ -21,7 +21,12 @@ const context =
   'any part of the task, and read each one on that list before concluding. ' +
   'The common failure is reading two documents and stopping; the decisions ' +
   'index in particular tends to bear on far more of a backlog or evaluation ' +
-  'task than it first appears.';
+  'task than it first appears. If docs/reference/glossary.md exists, it is ' +
+  'the project\'s domain vocabulary: speak in its canonical terms, challenge ' +
+  'usage - the user\'s or your own - that conflicts with an entry, propose a ' +
+  'precise term when the language in play is fuzzy or overloaded, and treat ' +
+  'a term resolved during this task as documentation impact to capture in ' +
+  'the glossary, not a remark to lose.';
 
 process.stdout.write(JSON.stringify({
   hookSpecificOutput: {

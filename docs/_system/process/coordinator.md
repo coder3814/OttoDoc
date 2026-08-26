@@ -28,6 +28,8 @@ Prefer updates over creation. A proposed document must identify a future reader 
 
 A proposed `Decision` must additionally pass one of its two admission doorways (constitution §2). As a rationale record: the choice is hard to reverse, surprising without context, and the result of a real trade-off — if any of the three is missing, skip it. As a conformance record: it states a standard future work must follow that the code alone does not reveal. Choices that typically qualify: architectural shape, integration patterns between parts of the system, technology choices that carry real lock-in, boundary and ownership decisions (the explicit no's as much as the yes's), deliberate deviations from the obvious path, constraints not visible in the code, and rejected alternatives that would otherwise be re-proposed.
 
+Terminology is impact. A task that coins a new domain concept, resolves which of several competing terms is canonical, or sharpens what an existing term means justifies updating `reference/glossary.md` — created lazily on the first resolved term. Entries follow the glossary rules in constitution §2.
+
 Report unrelated implementation concerns separately without fixing them or creating files or issues.
 
 For `OttoDoc intake [filename]`, treat the filename as optional. With one filename, assess that direct child of `docs/_intake/`; with no filename, assess every file currently in the folder. Reject paths, directories, multiple filenames, filename patterns, duplicate filenames, and files the active agent cannot read. When a source yields no live documentation, report that conclusion and obtain owner approval before dispatching deletion.

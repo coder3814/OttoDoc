@@ -16,6 +16,8 @@ Documents own intent, rationale, and facts about the world outside this reposito
 
 Absence is not evidence. The tree holds only what some task required, so an undocumented subject is an unwritten document, not an unconstrained one.
 
+`reference/glossary.md`, once it exists, is the project's domain vocabulary — one canonical term per entry, what the concept *is*, and the synonyms to avoid. Vocabulary bears on every task, so speak and write in its terms, challenge usage — the user's or your own — that conflicts with an entry, propose a precise term when the language in play is fuzzy, and when a task resolves a term or coins a domain concept, capture it in the glossary through the documentation workflow.
+
 ## Maintaining the documentation
 
 After every completed system-modifying task, read `docs/_system/process/coordinator.md` and perform its bounded documentation-impact assessment. Follow `docs/_system/constitution.md` for every documentation judgment. Use the `doc-coordinator`, `doc-author`, and `doc-reviewer` subagents when the canonical workflow requests those roles.

@@ -24,6 +24,7 @@ Split when major sections have independent entry conditions, prerequisites, risk
 - Include only material that supports the document's primary reader question. Every section must earn its place. More than roughly 1,500 words or eight H2 sections triggers explicit scope review, not automatic failure.
 - Link instead of duplicating facts owned elsewhere. Include critical commands, warnings, constraints, and expected outcomes when the reader needs them; do not reproduce complete parameter inventories or source mechanics without a demonstrated retrieval need.
 - Choose tags a searcher would actually grep for; neither pad nor starve them.
+- Glossary entries (constitution §2) name one canonical term, define in a sentence or two what the concept *is* — not what it does — and list the synonyms to avoid. Be opinionated: one word wins, the rest are outlawed. Admit only concepts particular to this project's domain, never general programming vocabulary or implementation detail.
 - Record yourself in `generated` under your agent actor with today's date for material content changes. Git and workflow history carry review evidence; never add `verified` metadata.
 
 ## Validation and conflicts
