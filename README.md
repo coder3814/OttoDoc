@@ -54,6 +54,8 @@ OttoDoc supplies the missing contract. It installs a documentation engine under 
 
 Every admitted document follows a small structural contract: machine-readable frontmatter, a summary-first shape, content provenance, and links to related knowledge. The tree remains shallow and predictable. Subject folders are introduced only when the amount of material earns them.
 
+Two kinds carry sharpened rules. A `decision` is admitted only when the choice is hard to reverse, surprising without context, and the result of a real trade-off — or when it states a standard future work must conform to that the code alone does not reveal; everything else is left unrecorded on purpose. And one `reference` document has standing beyond its kind: `reference/glossary.md`, the project's domain vocabulary — one canonical term per entry, what the concept *is*, and the synonyms to avoid. Because vocabulary bears on every task, agents are taught to speak in the glossary's terms, challenge usage that conflicts with an entry, and capture terms resolved during any task, so the project's language sharpens as the work happens instead of drifting.
+
 That structure is reinforced by four mechanisms:
 
 1. **A constitution** defines what belongs in the knowledge tree, how documents are admitted or retired, and which rules are authoritative.
