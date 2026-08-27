@@ -54,7 +54,7 @@ OttoDoc supplies the missing contract. It installs a documentation engine under 
 
 Every admitted document follows a small structural contract: machine-readable frontmatter, a summary-first shape, content provenance, and links to related knowledge. The tree remains shallow and predictable. Subject folders are introduced only when the amount of material earns them.
 
-Two kinds carry sharpened rules. A `decision` is admitted only when the choice is hard to reverse, surprising without context, and the result of a real trade-off — or when it states a standard future work must conform to that the code alone does not reveal; everything else is left unrecorded on purpose. And one `reference` document has standing beyond its kind: `reference/glossary.md`, the project's domain vocabulary — one canonical term per entry, what the concept *is*, and the synonyms to avoid. Because vocabulary bears on every task, agents are taught to speak in the glossary's terms, challenge usage that conflicts with an entry, and capture terms resolved during any task, so the project's language sharpens as the work happens instead of drifting.
+One kind carries a sharpened admission rule: a `decision` is admitted only when the choice is hard to reverse, surprising without context, and the result of a real trade-off — or when it states a standard future work must conform to that the code alone does not reveal; everything else is left unrecorded on purpose. And one `reference` document, the project glossary, carries a discipline of its own — described next.
 
 That structure is reinforced by four mechanisms:
 
@@ -65,7 +65,31 @@ That structure is reinforced by four mechanisms:
 
 The rules live in one canonical location. Platform-specific files are generated pointers and adapters, so the process does not fragment into a different version for every tool.
 
-### 2. Structured knowledge with the Open Knowledge Format
+### 2. A glossary that captures the ubiquitous language
+
+Domain-driven design calls it the **ubiquitous language**: the single, shared vocabulary a team and its software use for the domain — the same words in conversation, in documentation, and in code. When the same concept is "account" in a meeting, "customer" in the schema, and "client" in the API, every translation between those names is a place for bugs and misunderstanding to hide. Most teams never write this language down; it lives in heads, splinters across artifacts, and drifts.
+
+OttoDoc gives it one home: `reference/glossary.md`. Each entry names the canonical term, defines what the concept *is* — not what it does — in a sentence or two, and lists the synonyms to avoid. The glossary is deliberately opinionated: when several words compete for one concept, one wins and the rest are outlawed. Only concepts particular to the project's domain are admitted; general programming vocabulary stays out, and definitions carry no implementation detail.
+
+```md
+**Invoice**:
+A request for payment sent to a customer after delivery.
+_Avoid_: bill, payment request
+```
+
+What makes the glossary more than a lookup page is the discipline attached to it. Vocabulary bears on every task rather than on a discoverable class of tasks, so the glossary is the one document agents are taught to weigh on every prompt instead of finding by search. The obligation has four verbs:
+
+- **Speak** in the glossary's canonical terms — in prose, in documentation, and in code.
+- **Challenge** usage that conflicts with an entry — the user's or the agent's own — instead of silently adopting it.
+- **Sharpen** fuzzy or overloaded language by proposing a precise canonical term.
+- **Capture** a term resolved during any task as documentation impact, through the same authoring and fresh-context review as every other change.
+
+The glossary is created lazily — the first resolved term creates it — and grows only as real work forces terms to be settled. Nothing is backfilled for completeness, so every entry exists because a task once needed the distinction it draws.
+
+> [!TIP]
+> **Result:** Humans, agents, and code converge on one name for each concept, and the project's language sharpens as the work happens instead of drifting apart.
+
+### 3. Structured knowledge with the Open Knowledge Format
 
 Every knowledge file in OttoDoc is an [Open Knowledge Format (OKF)](docs/_system/okf-spec.md) concept: one Markdown document representing one coherent unit of knowledge, with YAML frontmatter that makes the document understandable to both people and agents.
 
@@ -86,7 +110,7 @@ The body remains useful without reading the metadata. Each concept opens with a 
 > [!TIP]
 > **Result:** Humans can read the knowledge directly, agents can parse it consistently, and Git can track every meaningful change.
 
-### 3. Navigation that rebuilds itself
+### 4. Navigation that rebuilds itself
 
 OttoDoc indexes are generated navigation, not documents that someone must remember to curate. The knowledge files are the source of truth; each `index.md` is a deterministic projection of their locations, titles, types, and descriptions.
 
@@ -121,7 +145,7 @@ An index contains no original knowledge and is never edited by hand. If every in
 > [!TIP]
 > **Result:** Additions cannot hide, deletions cannot leave ghosts, and agents can progressively narrow context without loading the entire knowledge tree.
 
-### 4. Assets with accountable owners
+### 5. Assets with accountable owners
 
 Not everything that supports documentation belongs in Markdown. OttoDoc accepts non-Markdown assets—images, diagrams, captured data, reference artifacts, and scripts that are themselves documentation content—and treats them as payload, not standalone knowledge. The knowledge about an asset belongs in a concept document.
 
@@ -130,7 +154,7 @@ Every asset lives in an `assets/` folder beside its primary owning document or s
 > [!TIP]
 > **Result:** Supporting files remain discoverable through the knowledge that explains them instead of becoming an unowned file dump.
 
-### 5. Independent authoring and review
+### 6. Independent authoring and review
 
 OttoDoc separates documentation coordination, authorship, and fresh-context review. The coordinator decides whether a change creates durable knowledge and scopes the work. The author writes or normalizes the documentation from repository evidence. A reviewer who did not author the change evaluates it from the perspective of a future reader.
 
