@@ -196,7 +196,7 @@ Documentation-only work may inspect the repository, but it may modify only `docs
 Open your agent interface at the root of the repository you want to document and name the platform that repository uses:
 
 ```text
-OttoDoc install Codex from https://github.com/coder3814/OttoDoc
+OttoDoc install Claude from https://github.com/coder3814/OttoDoc
 ```
 
 Use `Claude` or `Cursor` instead of `Codex` as appropriate. Install is the one command typed as plain prose, because it runs before any adapter exists. Your agent retrieves the portable engine into `docs/_system/`, creates the six kind directories and `docs/_intake/`, records the chosen platform in `docs/.ottodoc`, generates the platform's adapters — including a slash command for every other OttoDoc verb — and the GitHub documentation check, and builds the initial indexes. If the repository already contains documentation that does not conform, installation stops with no existing content modified—run `OttoDoc check` to see what needs fixing, then install again. Review and commit the installed files.
