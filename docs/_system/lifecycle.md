@@ -61,7 +61,7 @@ Cursor expresses neither. Its `model` field takes `inherit` or a specific identi
 
 A repository whose Claude installation lacks access to a named tier falls back to that platform's own resolution; the engine does not attempt to detect availability.
 
-**Revisiting the assignment.** The split above is a considered starting point, not a measured result, and the honest way to settle it is to replay real changes at different levels and compare outcomes — does a cheaper coordinator over- or under-trigger, and does a cheaper reviewer miss findings a deep one catches? The author tier is the one most worth testing: two revision cycles driven by a weak author cost more than one pass from a strong one, so if review findings cluster on craft rather than evidence, raise it. `tests/lifecycle-test.ps1` covers converge mechanics only; there is no behavioral harness for this yet, and that gap is real.
+**Revisiting the assignment.** These tiers are a judgment call; if review findings start clustering on writing quality rather than on facts, raise the author.
 
 **Owner override.** There is none by design. Agent adapter paths are owned absolutely (above), so converge overwrites a hand-edited level on the next run. Changing a level means changing the role's canonical definition and the adapters together, which is the same discipline every other process change follows.
 
