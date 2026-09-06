@@ -158,6 +158,8 @@ Every asset lives in an `assets/` folder beside its primary owning document or s
 
 OttoDoc separates documentation coordination, authorship, and fresh-context review. The coordinator decides whether a change creates durable knowledge and scopes the work. The author writes or normalizes the documentation from repository evidence. A reviewer who did not author the change evaluates it from the perspective of a future reader.
 
+Each role declares the reasoning level its work demands rather than inheriting whatever model you happen to be driving. The two gates run deep — the coordinator, which decides whether documentation is justified at all, and the reviewer, which decides whether what was written is good enough to land. The author between them runs standard, working from a bounded delta against supplied evidence and a template, with the deep reviewer checking its output. Spend on deciding and verifying, not on the step in between.
+
 This separation prevents one agent from silently deciding what should exist, writing it, and approving its own result. Mechanical validation then checks the parts that should not depend on judgment: structure, metadata, links, assets, generated navigation, and adapter consistency.
 
 > [!TIP]

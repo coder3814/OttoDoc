@@ -38,6 +38,33 @@ A prompt-time obligation fires on the agent's turn, so it covers the path where 
 
 Codex and Cursor currently expose no equivalent prompt-time extension point, so those platforms carry only the static block or rule — for settling as much as for routing. That is a known, deliberate gap: when such an extension point appears, the same obligations should be injected there rather than approximated with more static text.
 
+## Reasoning levels
+
+Each role declares in its canonical definition under `_system/process/` the reasoning level its work demands, and the adapters render that declaration in whatever form the platform accepts. There are two levels, because there are only two kinds of work here:
+
+- **Deep** — the most capable model available and the highest reasoning effort the platform exposes. Held by `doc-coordinator` and `doc-reviewer`: the gate that decides whether documentation is justified, and the gate that decides whether what was written is good enough to land.
+- **Standard** — a capable mid-tier model at ordinary effort. Held by `doc-author`, which works from a bounded delta against supplied evidence and a template, and whose output a deep reviewer checks before it lands.
+
+The shape is deliberate: spend on deciding and verifying, not on the step between them, and never let a role's level be decided by whatever model the owner happened to be driving when the task came up.
+
+| Role | Level | Claude | Codex | Cursor |
+|---|---|---|---|---|
+| `doc-coordinator` | Deep | `model: opus`, `effort: high` | `model_reasoning_effort = "high"` | `model: inherit` |
+| `doc-reviewer` | Deep | `model: opus`, `effort: high` | `model_reasoning_effort = "high"` | `model: inherit` |
+| `doc-author` | Standard | `model: sonnet`, `effort: medium` | `model_reasoning_effort = "medium"` | `model: inherit` |
+
+**What each platform can express.** Only Claude renders the declaration whole, because its `model` field takes durable family aliases — `opus` and `sonnet` name whatever currently holds those tiers, so an adapter written today still means the right thing after a model generation turns over.
+
+Codex carries the effort half. Its per-agent `model` key takes a concrete model identifier and offers no family alias, so pinning one would bind every consuming repository to a model that dates; the key is therefore left unset and the platform's own default model applies at the declared effort.
+
+Cursor expresses neither. Its `model` field takes `inherit` or a specific identifier, and effort rides only as a bracketed parameter on such an identifier — `claude-opus-5[effort=high]` — so there is no way to state the level without pinning. The adapters keep `model: inherit`, which means the deep roles get whatever the owner drives with and the author is not held down. This is a known gap of the same kind as the missing prompt-time extension point above, recorded rather than papered over: when Cursor offers a relative model selector, the declaration should render there.
+
+A repository whose Claude installation lacks access to a named tier falls back to that platform's own resolution; the engine does not attempt to detect availability.
+
+**Revisiting the assignment.** The split above is a considered starting point, not a measured result, and the honest way to settle it is to replay real changes at different levels and compare outcomes — does a cheaper coordinator over- or under-trigger, and does a cheaper reviewer miss findings a deep one catches? The author tier is the one most worth testing: two revision cycles driven by a weak author cost more than one pass from a strong one, so if review findings cluster on craft rather than evidence, raise it. `tests/lifecycle-test.ps1` covers converge mechanics only; there is no behavioral harness for this yet, and that gap is real.
+
+**Owner override.** There is none by design. Agent adapter paths are owned absolutely (above), so converge overwrites a hand-edited level on the next run. Changing a level means changing the role's canonical definition and the adapters together, which is the same discipline every other process change follows.
+
 ## Converge
 
 Every lifecycle command shares one routine: read the record, then make disk match it for each supported platform. Configured — write the platform's owned files from the canon under `_system/integrations/` and upsert its block in the shared file. Not configured — delete its owned files and strip its block, deleting the shared file only when the block was all it held. The CI workflow is rendered unconditionally. `-Check` computes the same desired state and reports differences without writing anything, exiting nonzero on drift.

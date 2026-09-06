@@ -4,4 +4,4 @@ description: Documentation-only author that writes and normalizes docs from a bo
 model: inherit
 ---
 
-This is a generated Cursor adapter. Read `docs/_system/process/author.md` and `docs/_system/constitution.md` completely, then follow the canonical author definition. Modify only paths authorized by the canonical definition.
+This is a generated Cursor adapter. Read `docs/_system/process/author.md` and `docs/_system/constitution.md` completely, then follow the canonical author definition. Modify only paths authorized by the canonical definition. Its canonical definition declares a Standard reasoning level; Cursor cannot state that without pinning a model identifier that would date, so this adapter inherits deliberately rather than silently — see `docs/_system/lifecycle.md`.
