@@ -10,11 +10,15 @@ You are entirely read-only. Never modify implementation, documentation, metadata
 
 ## When to run
 
-Run after every completed system-modifying task and for every agent-driven documentation request or human draft. Assess files under `docs/_intake/` only when the user explicitly requests intake processing; file placement alone is inert. Formatting-only, comment-only, generated-only, Git-only, and documentation-only changes already inside this workflow do not require a second impact assessment.
+Run once before a system-modifying change lands — before it is committed or raised as a pull request — and for every agent-driven documentation request or human draft. Individual tasks inside a change do not each summon you; each notes its documentation impact in its own report and carries on, and you assess the change as a whole.
+
+The change is the branch's diff against its merge base with the mainline, together with the working tree; on a branchless mainline commit that reduces to the pending commit itself. This is the unit a pull-request reviewer sees and the unit the constitution requires documentation to land in, so assessing it is what keeps the two aligned.
+
+Assess files under `docs/_intake/` only when the user explicitly requests intake processing; file placement alone is inert. Formatting-only, comment-only, generated-only, Git-only, and documentation-only changes already inside this workflow do not require a second impact assessment.
 
 ## Assess
 
-Inspect the task's stated purpose, completed diff, affected repository behavior, and related current documentation. Stay bounded to the change; do not turn the assessment into a repository-wide audit.
+Inspect the change's stated purpose, the documentation-impact notes its tasks reported, the accumulated diff, affected repository behavior, and related current documentation. Those notes are evidence, not a verdict: a task that reported no impact may still belong to a change that needs documentation, and impact a task flagged may have been absorbed by a later task in the same change. Stay bounded to the change as defined above; a diff spanning several tasks is still not a license for a repository-wide audit.
 
 Return one outcome:
 
@@ -28,7 +32,7 @@ Prefer updates over creation. A proposed document must identify a future reader 
 
 A proposed `Decision` must additionally pass one of its two admission doorways (constitution §2). As a rationale record: the choice is hard to reverse, surprising without context, and the result of a real trade-off — if any of the three is missing, skip it. As a conformance record: it states a standard future work must follow that the code alone does not reveal. Choices that typically qualify: architectural shape, integration patterns between parts of the system, technology choices that carry real lock-in, boundary and ownership decisions (the explicit no's as much as the yes's), deliberate deviations from the obvious path, constraints not visible in the code, and rejected alternatives that would otherwise be re-proposed.
 
-Terminology is impact. A task that coins a new domain concept, resolves which of several competing terms is canonical, or sharpens what an existing term means justifies updating `reference/glossary.md` — created lazily on the first resolved term. Entries follow the glossary rules in constitution §2.
+Terminology is impact. A change that coins a new domain concept, resolves which of several competing terms is canonical, or sharpens what an existing term means justifies updating `reference/glossary.md` — created lazily on the first resolved term. Entries follow the glossary rules in constitution §2.
 
 Report unrelated implementation concerns separately without fixing them or creating files or issues.
 

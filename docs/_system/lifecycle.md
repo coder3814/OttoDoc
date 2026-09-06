@@ -25,16 +25,18 @@ Every OttoDoc verb except `install` — the fifteen command verbs `assess`, `cre
 
 **Ownership of mapped paths is absolute.** The owned paths above belong to OttoDoc: converge overwrites and removes them without inspecting their content. Do not put your own files at these paths, and never edit a generated file directly — the next converge erases the edit.
 
-## Prompt-time routing
+## Prompt-time obligations
 
-The static "Using the documentation" block alone does not reliably make agents route from the knowledge tree on judgment tasks — evaluating a backlog, prioritizing work — because instructions resting in static context lose to task momentum. Where a platform offers a prompt-time extension point, OttoDoc therefore also injects the routing obligation into every user prompt.
+The static "Using the documentation" block alone does not reliably make agents route from the knowledge tree on judgment tasks — evaluating a backlog, prioritizing work — because instructions resting in static context lose to task momentum. The same is true of settling documentation before a change lands, which competes with the momentum of shipping. Where a platform offers a prompt-time extension point, OttoDoc therefore injects both standing obligations — routing from the tree, and settling the accumulated change — into every user prompt.
 
-On Claude, that surface is a `UserPromptSubmit` hook: the owned script `.claude/hooks/doc-routing.js` emits the obligation as `additionalContext`, and converge merges its registration — one command entry running `node .claude/hooks/doc-routing.js` — into the shared `.claude/settings.json`. The injected text is platform-generic and complements the `CLAUDE.md` block; it does not replace it.
+On Claude, that surface is a `UserPromptSubmit` hook: the owned script `.claude/hooks/doc-routing.js` emits both obligations as `additionalContext`, and converge merges its registration — one command entry running `node .claude/hooks/doc-routing.js` — into the shared `.claude/settings.json`. The injected text is platform-generic and complements the `CLAUDE.md` block; it does not replace it. The script keeps its original name though it now carries both obligations: the path is an owned adapter path, and renaming it would churn every installation for no functional gain.
 
 > [!IMPORTANT]
-> Project-settings hooks do not execute in headless Claude Code sessions (`claude -p`) until the project has been trusted once interactively. Open the project in an interactive session and approve the one-time prompt, or headless agents silently run without the routing hook.
+> Project-settings hooks do not execute in headless Claude Code sessions (`claude -p`) until the project has been trusted once interactively. Open the project in an interactive session and approve the one-time prompt, or headless agents silently run without the obligations hook — changes can then land unsettled as well as unrouted.
 
-Codex and Cursor currently expose no equivalent prompt-time extension point, so those platforms carry only the static block or rule. That is a known, deliberate gap: when such an extension point appears, the same obligation should be injected there rather than approximated with more static text.
+A prompt-time obligation fires on the agent's turn, so it covers the path where the agent commits the change or raises the pull request. An owner who commits by hand after the agent's last task passes no prompt through the hook, and nothing catches the unsettled change. The constitution's rule is stricter than this mechanism: it says documentation settles before the change lands, however it lands. Closing that remainder would take a commit-time extension point — on Claude, a `PreToolUse` matcher on `git commit` — and until one is configured the agent-driven path is the covered one. This is recorded here rather than left to be discovered.
+
+Codex and Cursor currently expose no equivalent prompt-time extension point, so those platforms carry only the static block or rule — for settling as much as for routing. That is a known, deliberate gap: when such an extension point appears, the same obligations should be injected there rather than approximated with more static text.
 
 ## Converge
 

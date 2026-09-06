@@ -1,7 +1,7 @@
 ---
 name: ottodoc-assess
 description: OttoDoc assess - Assess a completed change for documentation impact.
-argument-hint: '[change or task]'
+argument-hint: '[change]'
 ---
 
 # OttoDoc assess

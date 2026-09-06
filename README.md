@@ -183,7 +183,7 @@ Lint and regenerate indexes
 Commit the docs with the implementation
 ```
 
-For agent-driven work, the documentation coordinator assesses impact after a system-changing task. If the repository needs a documentation update, the coordinator delegates the bounded writing task to an author and sends the result to a fresh-context reviewer. Findings return to the author for a limited number of revision cycles; unresolved judgment returns to the repository owner.
+For agent-driven work, the documentation coordinator assesses impact once per change rather than once per task. A task that modifies the system notes its documentation impact and carries on; before the change is committed or raised as a pull request, the coordinator assesses the whole accumulated diff. That is the same unit the documentation has to land in, and it keeps the review cycle out of the middle of your work. If the repository needs a documentation update, the coordinator delegates the bounded writing task to an author and sends the result to a fresh-context reviewer. Findings return to the author for a limited number of revision cycles; unresolved judgment returns to the repository owner.
 
 Humans can use the same system directly. They may scaffold a conforming document, edit an existing one, or place rough source material in `docs/_intake/` for later normalization. Intake is deliberately inert until someone explicitly asks for it to be processed.
 
@@ -203,10 +203,10 @@ Use `Claude` or `Cursor` instead of `Codex` as appropriate. Install is the one c
 
 The file `docs/.ottodoc` records which platforms are configured; it is the single source of truth the tooling converges the repository against. Platform paths such as `.claude/`, `.codex/`, `.cursor/`, `.agents/`, and `.github/workflows/docs.yml` are generated whole and owned by OttoDoc—never edit them, and never edit inside the `ottodoc:begin`/`ottodoc:end` markers in `CLAUDE.md` or `AGENTS.md`. Everything outside those markers is yours and is preserved byte for byte.
 
-On Claude, OttoDoc also installs a prompt-time routing hook, because static context alone does not reliably make agents consult the tree on judgment tasks: the generated `.claude/hooks/doc-routing.js` injects the documentation-routing obligation into every user prompt, and one `UserPromptSubmit` entry is merged into `.claude/settings.json`—that entry is OttoDoc's, the rest of the file stays yours.
+On Claude, OttoDoc also installs a prompt-time obligations hook, because static context alone does not reliably survive task momentum: the generated `.claude/hooks/doc-routing.js` injects both standing obligations — route from the tree before judging, and settle documentation before a change lands — into every user prompt, and one `UserPromptSubmit` entry is merged into `.claude/settings.json`—that entry is OttoDoc's, the rest of the file stays yours.
 
 > [!WARNING]
-> Project-settings hooks do not run in headless Claude Code sessions (`claude -p`) until the project has been trusted once interactively. Open the repository in an interactive Claude Code session and approve the one-time prompt; until then, headless agents silently run without the routing hook.
+> Project-settings hooks do not run in headless Claude Code sessions (`claude -p`) until the project has been trusted once interactively. Open the repository in an interactive Claude Code session and approve the one-time prompt; until then, headless agents silently run without the obligations hook, which means changes can land unsettled as well as unrouted.
 
 Everyday maintenance is four slash commands, typed into any configured agent:
 
