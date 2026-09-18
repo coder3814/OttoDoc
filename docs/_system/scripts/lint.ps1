@@ -1,5 +1,6 @@
 # Documentation tree linter (constitution section 8, mechanical enforcement). Part of the OttoDoc engine.
 # Checks the knowledge tree only; _system/ and _intake/ are exempt by law (section 1 amendment 5).
+# The one thing it says about _intake/ is an informational count of change notes awaiting processing.
 # Template-hygiene checks (REPLACE description, replace-me tag, {{ placeholders) are deliberate
 # extras beyond the constitution's text - they catch a scaffold left unfinished.
 # Exit 0 = conformant; exit 1 = violations (one per line: path: message).
@@ -243,6 +244,17 @@ foreach ($doc in $docs) {
 foreach ($asset in $assetFiles) {
     if ($linkTargets -notcontains $asset) {
         Add-Err (Get-RelativeDocPath $docsRoot $asset) 'orphan asset - no concept doc links to it (constitution section 5)'
+    }
+}
+
+# --- Intake backlog: one informational line, never a failure (constitution section 8).
+#     Change notes are recognized by their filename prefix; the count is surfaced so a
+#     deferred backlog stays visible, and nothing here affects the exit code. ---
+$intakePath = Join-Path $docsRoot '_intake'
+if (Test-Path -LiteralPath $intakePath -PathType Container) {
+    $changeNotes = @(Get-ChildItem -LiteralPath $intakePath -File -Force | Where-Object { $_.Name -clike 'change-*.md' })
+    if ($changeNotes.Count -gt 0) {
+        Write-Output ('INTAKE: {0} change note(s) awaiting processing' -f $changeNotes.Count)
     }
 }
 

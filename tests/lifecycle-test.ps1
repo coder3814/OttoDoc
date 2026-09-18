@@ -187,6 +187,16 @@ The answer is 42.
     [System.IO.File]::WriteAllText((Join-Path $repo 'docs\reference\test-fact.md'), $doc.Replace("`r`n", "`n"), (New-Object System.Text.UTF8Encoding($false)))
     & (Join-Path $scripts 'regen.ps1') | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'regen accepts the test document'
+
+    # --- lint surfaces change notes in intake as one informational line and never fails on them ---
+    $out = & (Join-Path $scripts 'lint.ps1')
+    Assert ($LASTEXITCODE -eq 0 -and -not (($out -join "`n").Contains('INTAKE:'))) 'lint prints no INTAKE line when intake holds no change note'
+    $notePath = Join-Path $repo 'docs\_intake\change-2026-08-01-test-note.md'
+    [System.IO.File]::WriteAllText($notePath, "# Change note: test`n")
+    $out = & (Join-Path $scripts 'lint.ps1')
+    Assert ($LASTEXITCODE -eq 0) 'lint still exits 0 with a change note in intake'
+    Assert (($out -join "`n").Contains('INTAKE: 1 change note(s) awaiting processing')) 'lint prints the INTAKE line for the change note'
+    Remove-Item -LiteralPath $notePath -Force
     & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'configure Claude again exits 0'
     Assert ((Test-Path $settingsPath) -and (Read-Text $settingsPath).Contains('doc-routing.js')) 'settings.json created fresh when absent'
