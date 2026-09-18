@@ -172,22 +172,24 @@ This separation prevents one agent from silently deciding what should exist, wri
 A typical documentation change follows this loop:
 
 ```text
-Assess the code change
+Make the code change
         ↓
-Decide whether documentation is justified
+File a change note in docs/_intake/ — it lands with the code
+        ↓
+Run /ottodoc-intake when you choose
+        ↓
+Assess the noted changes; decide whether documentation is justified
         ↓
 Author or normalize the right document kind
         ↓
 Review with fresh context
         ↓
-Lint and regenerate indexes
-        ↓
-Commit the docs with the implementation
+Lint, regenerate indexes, and consume the note
 ```
 
-For agent-driven work, the documentation coordinator assesses impact once per change rather than once per task. A task that modifies the system notes its documentation impact and carries on; before the change is committed or raised as a pull request, the coordinator assesses the whole accumulated diff. That is the same unit the documentation has to land in, and it keeps the review cycle out of the middle of your work. If the repository needs a documentation update, the coordinator delegates the bounded writing task to an author and sends the result to a fresh-context reviewer. Findings return to the author for a limited number of revision cycles; unresolved judgment returns to the repository owner.
+For agent-driven work, no documentation is written while the change is in flight. A task that modifies the system notes its documentation impact and carries on; before the change is committed or raised as a pull request, the agent files a **change note** in `docs/_intake/` — a small Markdown file recording what the code cannot reveal: why the change was made, what each task flagged, which decisions were taken and which alternatives rejected, which terms were coined. It is a lead for the coordinator, not a draft document, and it lands in the same commit as the code. Documentation is authored when you run `/ottodoc-intake`, on your schedule: the coordinator assesses every note in intake as one batch against the current repository, delegates any bounded writing to an author, and sends the result to a fresh-context reviewer. Findings return to the author for a limited number of revision cycles; unresolved judgment returns to you. Consumed notes are deleted with the documentation they produced, and "no documentation change justified" is a common, healthy outcome. To document a particular change before it lands, `/ottodoc-assess` runs the same assessment immediately over the current branch.
 
-Humans can use the same system directly. They may scaffold a conforming document, edit an existing one, or place rough source material in `docs/_intake/` for later normalization. Intake is deliberately inert until someone explicitly asks for it to be processed.
+Humans can use the same system directly. They may scaffold a conforming document, edit an existing one, or place rough source material in `docs/_intake/` for later normalization. Intake is deliberately inert until someone explicitly asks for it to be processed, and every lint run — locally and in CI — prints one informational line when intake holds change notes, so a waiting backlog is visible without ever failing a build.
 
 Documentation-only work may inspect the repository, but it may modify only `docs/`. It does not fix code or query live systems. This boundary keeps documentation work reviewable and prevents an apparently harmless docs task from changing operational state.
 
@@ -205,10 +207,10 @@ Use `Claude` or `Cursor` instead of `Codex` as appropriate. Install is the one c
 
 The file `docs/.ottodoc` records which platforms are configured; it is the single source of truth the tooling converges the repository against. Platform paths such as `.claude/`, `.codex/`, `.cursor/`, `.agents/`, and `.github/workflows/docs.yml` are generated whole and owned by OttoDoc—never edit them, and never edit inside the `ottodoc:begin`/`ottodoc:end` markers in `CLAUDE.md` or `AGENTS.md`. Everything outside those markers is yours and is preserved byte for byte.
 
-On Claude, OttoDoc also installs a prompt-time obligations hook, because static context alone does not reliably survive task momentum: the generated `.claude/hooks/doc-routing.js` injects both standing obligations — route from the tree before judging, and settle documentation before a change lands — into every user prompt, and one `UserPromptSubmit` entry is merged into `.claude/settings.json`—that entry is OttoDoc's, the rest of the file stays yours.
+On Claude, OttoDoc also installs a prompt-time obligations hook, because static context alone does not reliably survive task momentum: the generated `.claude/hooks/doc-routing.js` injects both standing obligations — route from the tree before judging, and file a change note before a change lands — into every user prompt, and one `UserPromptSubmit` entry is merged into `.claude/settings.json`—that entry is OttoDoc's, the rest of the file stays yours.
 
 > [!WARNING]
-> Project-settings hooks do not run in headless Claude Code sessions (`claude -p`) until the project has been trusted once interactively. Open the repository in an interactive Claude Code session and approve the one-time prompt; until then, headless agents silently run without the obligations hook, which means changes can land unsettled as well as unrouted.
+> Project-settings hooks do not run in headless Claude Code sessions (`claude -p`) until the project has been trusted once interactively. Open the repository in an interactive Claude Code session and approve the one-time prompt; until then, headless agents silently run without the obligations hook, which means changes can land without their change note as well as unrouted.
 
 Everyday maintenance is four slash commands, typed into any configured agent:
 
@@ -248,13 +250,13 @@ Documentation verbs:
 
 | Command | Purpose |
 | --- | --- |
-| `/ottodoc-assess` | Assess a completed change for documentation impact |
+| `/ottodoc-assess` | Assess the current change for documentation impact now, without waiting for intake |
 | `/ottodoc-create` | Create a document of a specified kind |
 | `/ottodoc-update` | Update an existing document |
 | `/ottodoc-rename` | Rename a document file, repair links, and regenerate indexes |
 | `/ottodoc-move` | Move a document and repair affected links |
 | `/ottodoc-retire` | Deliberately remove documentation that is no longer live |
-| `/ottodoc-intake` | Process one named file from `docs/_intake/`, or all of intake when no filename is supplied |
+| `/ottodoc-intake` | Process one named file from `docs/_intake/`, or all of intake when no filename is supplied — agents' change notes and humans' drafts alike |
 | `/ottodoc-review` | Perform fresh-context review of a document or documentation change |
 | `/ottodoc-check` | Verify the entire documentation system without changing it |
 | `/ottodoc-fix` | Resolve reported documentation findings and verify the result |
@@ -276,6 +278,7 @@ A few examples:
 ```text
 /ottodoc-create runbook "Rotate the webhook signing key" using repository configuration as evidence
 /ottodoc-update docs/explanations/api-authentication.md to match the current implementation
+/ottodoc-intake
 /ottodoc-intake cache-design-notes.md
 /ottodoc-assess the change I just completed and update the documentation if needed
 ```
