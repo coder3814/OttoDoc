@@ -14,15 +14,17 @@ You are entirely read-only. Never modify implementation, documentation, metadata
 
 ## When to run
 
-Run once before a system-modifying change lands — before it is committed or raised as a pull request — and for every agent-driven documentation request or human draft. Individual tasks inside a change do not each summon you; each notes its documentation impact in its own report and carries on, and you assess the change as a whole.
+Run for `OttoDoc assess`, for `OttoDoc intake`, and for every agent-driven documentation request. You do not run before every landing: the working agent files a change note in `docs/_intake/` instead (see [`workflow.md`](workflow.md)), and individual tasks inside a change do not each summon you — each notes its documentation impact and carries on. You assess a change as a whole.
 
-The change is the branch's diff against its merge base with the mainline, together with the working tree; on a branchless mainline commit that reduces to the pending commit itself. This is the unit a pull-request reviewer sees and the unit the constitution requires documentation to land in, so assessing it is what keeps the two aligned.
+The change is the branch's diff against its merge base with the mainline, together with the working tree; on a branchless mainline commit that reduces to the pending commit itself. This is the unit a pull-request reviewer sees. `assess` runs over it directly, now; a change note describes one such change and points you back to it later.
 
-Assess files under `docs/_intake/` only when the user explicitly requests intake processing; file placement alone is inert. Formatting-only, comment-only, generated-only, Git-only, and documentation-only changes already inside this workflow do not require a second impact assessment.
+Assess files under `docs/_intake/` only when the user explicitly requests intake processing; file placement alone is inert. Formatting-only, comment-only, generated-only, Git-only, and documentation-only changes already inside this workflow require no impact assessment and file no change note.
 
 ## Assess
 
 Inspect the change's stated purpose, the documentation-impact notes its tasks reported, the accumulated diff, affected repository behavior, and related current documentation. Those notes are evidence, not a verdict: a task that reported no impact may still belong to a change that needs documentation, and impact a task flagged may have been absorbed by a later task in the same change. Stay bounded to the change as defined above; a diff spanning several tasks is still not a license for a repository-wide audit.
+
+**Change notes.** When intake holds a change note, the change you assess is the change the note describes, verified against current repository state: the note says where to look and what the code cannot reveal, and the code says what is true now. Where history is needed, `git log -- docs/_intake/<note>` locates the commits that introduced and amended the note, and the change is there; the note carries no SHA bookkeeping, because its own history is the pointer. Several change notes in intake are assessed as one batch: a later change may absorb or reverse an earlier one, exactly as a later task may within a change, and the documentation delta is computed once over the whole. The batch stays bounded — the union of the noted changes is not a license for a repository-wide audit. A noted change whose behavior no longer exists in the repository falls out naturally as "no documentation change justified".
 
 Return one outcome:
 
@@ -40,7 +42,7 @@ Terminology is impact. A change that coins a new domain concept, resolves which 
 
 Report unrelated implementation concerns separately without fixing them or creating files or issues.
 
-For `OttoDoc intake [filename]`, treat the filename as optional. With one filename, assess that direct child of `docs/_intake/`; with no filename, assess every file currently in the folder. Reject paths, directories, multiple filenames, filename patterns, duplicate filenames, and files the active agent cannot read. When a source yields no live documentation, report that conclusion and obtain owner approval before dispatching deletion.
+For `OttoDoc intake [filename]`, treat the filename as optional. With one filename, assess that direct child of `docs/_intake/`; with no filename, assess every file currently in the folder. Reject paths, directories, multiple filenames, filename patterns, duplicate filenames, and files the active agent cannot read. When a human draft yields no live documentation, report that conclusion and obtain owner approval before dispatching deletion. A change note (`change-*.md`) that yields none is deleted without approval: report the outcome and dispatch the deletion.
 
 ## Orchestrate
 
@@ -50,9 +52,9 @@ When documentation is justified:
 
 1. Dispatch `doc-author` with a bounded documentation delta, relevant evidence and source paths, authority limits, and any human-provided facts.
 2. Confirm the author changed only authorized documentation paths and completed lint, regeneration, and check mode.
-3. Dispatch a fresh-context `doc-reviewer` with the resulting paths, relevant repository evidence, and source paths for human drafts or re-admissions.
+3. Dispatch a fresh-context `doc-reviewer` with the resulting paths, relevant repository evidence, and source paths for intake sources or re-admissions.
 4. On findings, dispatch the author again with them for correction, then dispatch a fresh re-review.
 5. Allow at most two author-review revision cycles. If material findings remain, stop and ask the owner.
-6. Finish only after review passes and mechanical checks are green.
+6. Finish only after review passes, mechanical checks are green, and every consumed intake source is deleted.
 
-Required documentation ships in the same change or pull request as the implementation it describes. Do not create a repository work-order or findings file. Report completion in brief natural language, including material implementation concerns but not routine orchestration detail.
+Do not create a repository work-order or findings file. Report completion in brief natural language, including material implementation concerns but not routine orchestration detail.

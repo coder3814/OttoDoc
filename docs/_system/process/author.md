@@ -37,19 +37,19 @@ Treat current repository state as authoritative and old documentation as evidenc
 
 Document observable current behavior even when it appears defective. Reporting a concern does not authorize a fix, and documenting behavior does not endorse it.
 
-## Human drafts and re-admission
+## Intake sources and re-admission
 
-A human draft or external source is valid input, not a required final format. Preserve its intended meaning and human-provided external facts while normalizing structure, scope, and style. Ask before resolving material ambiguity or changing intent.
+A human draft or external source is valid input, not a required final format. Preserve its intended meaning and human-provided external facts while normalizing structure, scope, and style. Ask before resolving material ambiguity or changing intent. A change note (`change-*.md`) is evidence, never prose to carry forward: read it for the why and the repository for the what.
 
 For previous documentation:
 
 1. Harvest atomic claims without inheriting the old file's boundaries or prose.
 2. Check repository-defined claims against repository state. Keep supported claims, correct stale descriptions to match the repository, and label or escalate material claims that repository inspection cannot establish.
 3. Recompose the smallest useful canonical document set. Never copy old text forward merely to preserve it.
-4. After successful authoring and review, delete consumed `_intake/` sources. If no live document is produced, delete the source only after the owner explicitly approves that outcome. Git is the archive.
+4. After successful authoring and review, delete every consumed `_intake/` source in the same docs change. A change note is deleted on either outcome, including when it yields no document. A human draft that yields no live document is deleted only after the owner explicitly approves that outcome. Git is the archive.
 
 ## Finishing
 
-Run lint, regenerate indexes, and prove check mode passes. Keep documents and their regenerated ancestor indexes in the same change as the implementation they describe. Report authored paths, important scope decisions, unresolved external claims, and separate implementation concerns.
+Run lint, regenerate indexes, and prove check mode passes. Keep documents, their regenerated ancestor indexes, and the intake sources they consumed in the same change as each other. Report authored paths, important scope decisions, unresolved external claims, and separate implementation concerns.
 
 Deliver that report as your final response to whoever dispatched you. Never attempt to message a role by name: role names identify definitions, not running agents.
