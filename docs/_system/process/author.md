@@ -46,7 +46,7 @@ For previous documentation:
 1. Harvest atomic claims without inheriting the old file's boundaries or prose.
 2. Check repository-defined claims against repository state. Keep supported claims, correct stale descriptions to match the repository, and label or escalate material claims that repository inspection cannot establish.
 3. Recompose the smallest useful canonical document set. Never copy old text forward merely to preserve it.
-4. After successful authoring and review, delete every consumed `_intake/` source in the same docs change. A change note is deleted on either outcome, including when it yields no document. A human draft that yields no live document is deleted only after the owner explicitly approves that outcome. Git is the archive.
+4. After successful authoring and review, delete every consumed `_intake/` source in the same docs change. A change note is deleted on either outcome, including when it yields no document — then the deletion is the whole docs change, and it needs no review. A human draft that yields no live document is deleted only after the owner explicitly approves that outcome. Git is the archive.
 
 ## Finishing
 

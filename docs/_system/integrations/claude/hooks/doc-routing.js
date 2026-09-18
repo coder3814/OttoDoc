@@ -27,12 +27,14 @@ const context =
   'usage - the user\'s or your own - that conflicts with an entry, propose a ' +
   'precise term when the language in play is fuzzy or overloaded, and treat ' +
   'a term resolved during this task as documentation impact to record in ' +
-  'the change note, not a remark to lose. ' +
+  'this change\'s change note - or in your report when the change files ' +
+  'none - not a remark to lose. ' +
   'Change note (before a change lands): the unit of documentation is the ' +
   'change, not each task inside it. A task that modifies the system notes ' +
   'its documentation impact and carries on - it does not summon the ' +
-  'documentation coordinator, and no documentation is written while the ' +
-  'change is in flight. What the change owes before it lands - before you ' +
+  'documentation coordinator, and unless the owner runs OttoDoc assess on ' +
+  'the change, no documentation is written while it is in flight. What the ' +
+  'change owes before it lands - before you ' +
   'commit it or raise a pull request - is a change note in docs/_intake/: ' +
   'when the first system-modifying task in this change completes, create ' +
   'docs/_intake/change-<YYYY-MM-DD>-<slug>.md from ' +
@@ -43,13 +45,15 @@ const context =
   'resolved, facts the owner stated - and leave the documentation itself to ' +
   'OttoDoc intake, which the owner runs on their own schedule. Keep the note ' +
   'current and commit it with the code. Formatting-only, comment-only, ' +
-  'generated-only, Git-only, and documentation-only changes need no note; ' +
-  'docs/_system/process/workflow.md is the canonical statement. Landing a ' +
-  'system-modifying change without its note is the failure this obligation ' +
-  'exists to prevent: the why exists only in your context right now and ' +
-  'evaporates when this change ends, and filing the note is cheaper than ' +
-  'the assessment it replaces and lands with the code, so write it rather ' +
-  'than deferring it to memory.';
+  'generated-only, Git-only, and documentation-only changes need no note, ' +
+  'and neither does a change the owner has had assessed with OttoDoc ' +
+  'assess before it lands; docs/_system/constitution.md section 8 states ' +
+  'the obligation whole. Landing a system-modifying change without its ' +
+  'note is the failure this obligation exists to prevent: the why exists ' +
+  'only in your context right now and evaporates when this change ends, ' +
+  'and filing the note is cheaper than the documentation assessment it ' +
+  'defers and lands with the code, so write it rather than deferring it ' +
+  'to memory.';
 
 process.stdout.write(JSON.stringify({
   hookSpecificOutput: {

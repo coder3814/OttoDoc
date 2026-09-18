@@ -187,7 +187,7 @@ Review with fresh context
 Lint, regenerate indexes, and consume the note
 ```
 
-For agent-driven work, no documentation is written while the change is in flight. A task that modifies the system notes its documentation impact and carries on; before the change is committed or raised as a pull request, the agent files a **change note** in `docs/_intake/` — a small Markdown file recording what the code cannot reveal: why the change was made, what each task flagged, which decisions were taken and which alternatives rejected, which terms were coined. It is a lead for the coordinator, not a draft document, and it lands in the same commit as the code. Documentation is authored when you run `/ottodoc-intake`, on your schedule: the coordinator assesses every note in intake as one batch against the current repository, delegates any bounded writing to an author, and sends the result to a fresh-context reviewer. Findings return to the author for a limited number of revision cycles; unresolved judgment returns to you. Consumed notes are deleted with the documentation they produced, and "no documentation change justified" is a common, healthy outcome. To document a particular change before it lands, `/ottodoc-assess` runs the same assessment immediately over the current branch.
+For agent-driven work, documentation is not written while the change is in flight unless you ask for it. A task that modifies the system notes its documentation impact and carries on; before the change is committed or raised as a pull request, the agent files a **change note** in `docs/_intake/` — a small Markdown file recording what the code cannot reveal: why the change was made, what each task flagged, which decisions were taken and which alternatives rejected, which terms were coined. It is a lead for the coordinator, not a draft document, and it lands in the same commit as the code. Documentation is authored when you run `/ottodoc-intake`, on your schedule: the coordinator assesses every note in intake as one batch against the current repository, delegates any bounded writing to an author, and sends the result to a fresh-context reviewer. Findings return to the author for a limited number of revision cycles; unresolved judgment returns to you. Consumed notes are deleted with the documentation they produced, and "no documentation change justified" is a common, healthy outcome. To document a particular change before it lands, `/ottodoc-assess` runs the same assessment immediately over the current branch, in place of a note.
 
 Humans can use the same system directly. They may scaffold a conforming document, edit an existing one, or place rough source material in `docs/_intake/` for later normalization. Intake is deliberately inert until someone explicitly asks for it to be processed, and every lint run — locally and in CI — prints one informational line when intake holds change notes, so a waiting backlog is visible without ever failing a build.
 
@@ -250,7 +250,7 @@ Documentation verbs:
 
 | Command | Purpose |
 | --- | --- |
-| `/ottodoc-assess` | Assess the current change for documentation impact now, without waiting for intake |
+| `/ottodoc-assess` | Assess a completed change for documentation impact now, without waiting for intake |
 | `/ottodoc-create` | Create a document of a specified kind |
 | `/ottodoc-update` | Update an existing document |
 | `/ottodoc-rename` | Rename a document file, repair links, and regenerate indexes |
@@ -306,7 +306,7 @@ The goal is not to produce more documentation. The goal is to preserve the small
 - [`docs/_system/process/coordinator.md`](docs/_system/process/coordinator.md) — coordination and delegation rules
 - [`docs/_system/process/author.md`](docs/_system/process/author.md) — authoring rules
 - [`docs/_system/process/reviewer.md`](docs/_system/process/reviewer.md) — fresh-context review rules
-- [`docs/_system/templates`](docs/_system/templates) — templates for each document kind
+- [`docs/_system/templates`](docs/_system/templates) — templates for each document kind and for the change note
 
 ---
 

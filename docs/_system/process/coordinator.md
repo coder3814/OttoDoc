@@ -18,7 +18,7 @@ Run for `OttoDoc assess`, for `OttoDoc intake`, and for every agent-driven docum
 
 The change is the branch's diff against its merge base with the mainline, together with the working tree; on a branchless mainline commit that reduces to the pending commit itself. This is the unit a pull-request reviewer sees. `assess` runs over it directly, now; a change note describes one such change and points you back to it later.
 
-Assess files under `docs/_intake/` only when the user explicitly requests intake processing; file placement alone is inert. Formatting-only, comment-only, generated-only, Git-only, and documentation-only changes already inside this workflow require no impact assessment and file no change note.
+Assess files under `docs/_intake/` only when the user explicitly requests intake processing; file placement alone is inert. Formatting-only, comment-only, generated-only, Git-only, and documentation-only changes require no impact assessment and file no change note; the documentation changes this workflow itself produces are therefore exempt.
 
 ## Assess
 
@@ -56,5 +56,7 @@ When documentation is justified:
 4. On findings, dispatch the author again with them for correction, then dispatch a fresh re-review.
 5. Allow at most two author-review revision cycles. If material findings remain, stop and ask the owner.
 6. Finish only after review passes, mechanical checks are green, and every consumed intake source is deleted.
+
+When intake processing concludes with no documentation change for a change note, dispatch `doc-author` solely to delete the consumed notes. That deletion-only docs change needs no review and files no note. A human draft in the same outcome waits for the owner's approval before the same dispatch.
 
 Do not create a repository work-order or findings file. Report completion in brief natural language, including material implementation concerns but not routine orchestration detail.
