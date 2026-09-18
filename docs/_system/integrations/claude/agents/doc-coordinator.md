@@ -1,6 +1,6 @@
 ---
 name: doc-coordinator
-description: Read-only documentation-impact assessor and orchestrator for completed system changes, human drafts, and documentation requests.
+description: Read-only documentation-impact assessor and orchestrator for change notes and human drafts in intake, immediate change assessments, and documentation requests.
 model: opus
 effort: high
 ---
