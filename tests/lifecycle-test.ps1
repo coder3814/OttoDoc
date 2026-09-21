@@ -275,14 +275,22 @@ The answer is 42.
     & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'check passes after upgrade'
 
-    # --- upgrading a repository that has no ignore file gives it a fresh install's boundary ---
+    # --- upgrading a repository that has no ignore file gives it a fresh install's boundary.
+    #     The archive's upgrade-finish.ps1 differs from the installed one, which proves the
+    #     post-swap steps come from the engine being installed, not the one being replaced:
+    #     a change to the upgrade takes effect on the upgrade that ships it. ---
+    $finishPath = Join-Path $work 'pkg\docs\_system\scripts\upgrade-finish.ps1'
+    [System.IO.File]::WriteAllText($finishPath, (Read-Text $finishPath).Replace("'UPGRADE OK: ", "'UPGRADE OK (next engine): "))
+    $zipNext = Join-Path $work 'ottodoc-next.zip'
+    Compress-Archive -Path (Join-Path $work 'pkg\*') -DestinationPath $zipNext
     Remove-Item -LiteralPath $ignorePath -Force
     git add -A
     git commit -q -m 'installed before the ignore file existed'
-    $out = (& (Join-Path $scripts 'upgrade.ps1') -ArchivePath $zip) -join "`n"
+    $out = (& (Join-Path $scripts 'upgrade.ps1') -ArchivePath $zipNext) -join "`n"
+    Assert ($out.Contains('UPGRADE OK (next engine): ')) 'the post-swap steps run from the engine just installed'
     Assert ($LASTEXITCODE -eq 0) 'upgrade without an ignore file exits 0'
     Assert (@($seeded | Where-Object { (Read-IgnoreLines) -cnotcontains $_ }).Count -eq 0) 'upgrade seeds a missing ignore file whole'
-    Assert ($out.Contains('CREATED: docs/.ottodocignore') -and $out.Contains('/CLAUDE.md')) 'upgrade announces the new boundary and its patterns'
+    Assert ($out.Contains('CREATED: docs/.ottodocignore') -and $out.Contains('BEHAVIOR CHANGE') -and $out.Contains('/CLAUDE.md')) 'upgrade announces the new boundary and its patterns'
     Assert (-not $out.Contains('is missing')) 'the upgrade''s own lint no longer reports a missing ignore file'
 
     # --- uninstall preserves the tree; reinstall restores the index byte-identically ---

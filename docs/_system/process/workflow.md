@@ -16,6 +16,7 @@ Every OttoDoc action except `install` is a per-verb slash command in each config
 
 - A lifecycle command frequently arrives from an agent with no prior OttoDoc context. Do not assume the engine was already discovered in this session: locate it under `docs/_system/`, read `lifecycle.md`, then proceed. If `docs/_system/` is absent, OttoDoc is not installed and the correct action is `install`.
 - The platform name for `configure` and `remove` is always required — never infer it, never treat a missing name as "all of them", and never escalate `remove` to `uninstall`. Confirm with the owner before invoking `uninstall`; the script itself is non-interactive so that other commands and CI may call it.
+- Relay every `CREATED:` and `NOTE:` line a lifecycle command prints to the owner, in substance and not merely as "succeeded". Those lines announce changes in behavior — a new system boundary, a one-time line-ending artifact — that the owner is entitled to decide on rather than inherit.
 
 `OttoDoc intake [filename]` accepts one optional filename: one filename processes that direct child of `docs/_intake/`, while no filename processes the entire folder. Do not require users to name or invoke implementation scripts. Scripts remain available to agents, maintainers, and CI as the execution layer.
 

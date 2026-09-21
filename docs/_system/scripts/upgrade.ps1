@@ -1,5 +1,6 @@
 # Replaces the installed OttoDoc engine with the newest files from its GitHub
-# repository and converges the recorded platforms (lifecycle.md: upgrade).
+# repository, then hands off to the new engine's upgrade-finish.ps1 to converge the
+# recorded platforms and report (lifecycle.md: upgrade).
 #
 #   upgrade.ps1 [-Repository <url>] [-Ref <ref>] [-ArchivePath <zip>]
 #
@@ -45,11 +46,13 @@ try {
     if ($ArchivePath) {
         $resolvedArchive = (Resolve-Path -LiteralPath $ArchivePath).Path
         Copy-Item -LiteralPath $resolvedArchive -Destination $downloadPath -Force
-        Write-Output ('UPGRADE SOURCE: local archive {0}' -f $resolvedArchive)
+        $source = ('local archive {0}' -f $resolvedArchive)
+        Write-Output ('UPGRADE SOURCE: {0}' -f $source)
     }
     else {
         # The generic archive form resolves branches, tags, and commit SHAs alike.
         $archiveUrl = '{0}/archive/{1}.zip' -f $Repository.TrimEnd('/'), $Ref
+        $source = ('{0} at ref {1}' -f $Repository, $Ref)
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         Write-Output ('UPGRADE DOWNLOAD: {0}' -f $archiveUrl)
         Invoke-WebRequest -Uri $archiveUrl -OutFile $downloadPath -UseBasicParsing
@@ -66,39 +69,12 @@ try {
     Remove-Item -LiteralPath $systemRoot -Recurse -Force
     Move-Item -LiteralPath $candidates[0].FullName -Destination $systemRoot
 
-    # Everything below runs on the new engine's helpers.
-    . (Join-Path $systemRoot 'scripts/platforms.ps1')
-
-    $intakePath = Join-Path $docsRoot '_intake'
-    if (-not (Test-Path -LiteralPath $intakePath)) {
-        New-Item -ItemType Directory -Path $intakePath | Out-Null
-        Write-Output 'CREATED: docs/_intake/'
-    }
-
-    # A repository installed before the ignore file existed, or one that lost it, gets
-    # the same boundary a fresh install has. An existing file is the owner's and is
-    # not touched. Announced, because it changes which paths owe a change note.
-    if (-not (Test-Path -LiteralPath (Join-Path $repoRoot $Script:IgnoreTarget) -PathType Leaf)) {
-        $seededPatterns = @(Add-OttodocIgnorePatterns -RepoRoot $repoRoot)
-        Write-Output ('CREATED: {0} - new system boundary: changes confined to {1} owe no change note. Review the defaults; the file is yours to edit.' -f $Script:IgnoreTarget, ($seededPatterns -join ', '))
-    }
-
-    $configured = @(Read-OttodocRecord -RepoRoot $repoRoot)
-    $result = Invoke-PlatformConverge -RepoRoot $repoRoot -SystemRoot $systemRoot
-    foreach ($item in $result['drift']) { Write-Output ('CONVERGED: {0}' -f $item) }
-    if ($result['drift'] -contains 'docs/.gitattributes: missing') {
-        # The rule arrives too late for this one run: Git flags a file whose size changed
-        # without comparing content, so a CRLF checkout still reads rewritten files as modified.
-        Write-Output 'NOTE: docs/.gitattributes is new. On a CRLF checkout (core.autocrlf=true) the files this upgrade rewrote show as modified with no content change until staged; git add -A clears them, and later upgrades stay clean.'
-    }
-
-    & (Join-Path $systemRoot 'scripts/regen.ps1')
-    if ($LASTEXITCODE -ne 0) { throw 'Lint or index regeneration failed under the new engine.' }
-
-    $succeeded = $true
-    $setDescription = '(none)'
-    if ($configured.Count -gt 0) { $setDescription = ($configured -join ', ') }
-    Write-Output ('UPGRADE OK: OttoDoc refreshed from {0} at ref {1}; configured platforms: {2}. Review the uncommitted diff.' -f $Repository, $Ref, $setDescription)
+    # Hand off to the engine just installed. This script was read whole before the swap,
+    # so a step written here would be the previous engine's; upgrade-finish.ps1 is read
+    # now, from the new engine, and owns everything after the swap - including the
+    # final report. Keep this script to the gate, the fetch, and the swap.
+    & (Join-Path $systemRoot 'scripts/upgrade-finish.ps1') -Source $source
+    $succeeded = ($LASTEXITCODE -eq 0)
 }
 catch {
     Write-Output ('UPGRADE FAILED: {0}' -f $_.Exception.Message)

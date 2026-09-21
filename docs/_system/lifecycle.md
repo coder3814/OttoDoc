@@ -100,12 +100,16 @@ A settings file that is not a JSON object — unparseable, or a JSON array or sc
 | Command | Script | Effect |
 |---|---|---|
 | install | `scripts/bootstrap.ps1 -Platform <name>` | Copy `_system/` into `<repo>/docs/_system`, then: create kind directories and `_intake/`, write the record, seed the ignore file, converge, lint + regen |
-| upgrade | `scripts/upgrade.ps1` | Replace `docs/_system/` wholesale from the OttoDoc repository, restore a missing `_intake/` or ignore file, then converge, lint + regen |
+| upgrade | `scripts/upgrade.ps1` | Replace `docs/_system/` wholesale from the OttoDoc repository, then hand off to the new engine's `scripts/upgrade-finish.ps1`: restore a missing `_intake/` or ignore file, converge, lint + regen |
 | configure | `scripts/configure-platform.ps1 -Platform <name>` | Add the platform to the record, append a newly added platform's patterns to the ignore file, converge |
 | remove | `scripts/remove-platform.ps1 -Platform <name>` | Remove the platform from the record, converge; removing the last platform is fine |
 | uninstall | `scripts/uninstall.ps1` | Converge to zero platforms, then delete the workflow, `docs/.gitattributes`, the record, the ignore file, `docs/_system/`, and the root index's governance pointer — every document, index, asset, and `_intake/` survives |
 | check | `scripts/check-adapters.ps1` | Converge `-Check`: report drift, change nothing |
 
 Lifecycle commands may modify only the engine, the mapped adapter paths, OttoDoc's block in shared files, the record, the ignore file as described above, the workflow, `docs/.gitattributes`, and the generated indexes; nothing else in the repository is theirs to touch. Install fails closed: pre-existing nonconforming documents abort it with no existing content modified. Upgrade requires a clean git tree and refuses to run over uncommitted changes.
+
+**An upgrade finishes on the engine it installed.** PowerShell reads a script whole before running it, so any step written in `upgrade.ps1` itself is the previous engine's step. `upgrade.ps1` therefore holds only the clean-tree gate, the fetch, and the swap, and then invokes `upgrade-finish.ps1` by path from the engine just installed; every step after the swap, and the final report, belongs to that file. A change to what an upgrade does takes effect on the upgrade that ships it, one pass is always complete, and `UPGRADE OK` is printed by the same engine whose lint then judges the installation. New post-swap behavior goes in `upgrade-finish.ps1`, never in `upgrade.ps1`; its parameters are an interface the previous engine calls, so they are only ever added to, optionally.
+
+**Announcements are for the owner.** A lifecycle command that changes behavior rather than files — creating the ignore file, which changes which paths owe a change note — says so in a `CREATED:` or `NOTE:` line. An agent running the command relays every such line to the owner in substance; a green result with the announcement dropped is a default imposed rather than a choice offered.
 
 **Git is the undo.** Every command leaves its result as an uncommitted diff for review; none commits or pushes, and none keeps backups or performs rollback. If a command fails partway, inspect the diff and use `git restore` to return to the last commit.
