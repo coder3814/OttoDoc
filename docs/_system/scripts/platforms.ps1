@@ -83,6 +83,11 @@ foreach ($commandVerb in $Script:CommandVerbs) {
 
 $Script:WorkflowSource = 'integrations/github-actions/docs.yml'
 $Script:WorkflowTarget = '.github/workflows/docs.yml'
+# Generated whole in every configuration, like the workflow (lifecycle.md).
+$Script:UnconditionalFiles = [ordered]@{
+    $Script:WorkflowSource = $Script:WorkflowTarget
+    'integrations/git/gitattributes' = 'docs/.gitattributes'
+}
 $Script:RecordTarget = 'docs/.ottodoc'
 $Script:IgnoreTarget = 'docs/.ottodocignore'
 
@@ -486,7 +491,8 @@ function Remove-GeneratedFile {
 function Invoke-PlatformConverge {
     # Makes the repository match the record (lifecycle.md): for each supported platform,
     # configured -> owned files written from canon and block upserted; not configured ->
-    # owned files removed and block stripped. The CI workflow is rendered unconditionally.
+    # owned files removed and block stripped. The CI workflow and docs/.gitattributes are
+    # rendered unconditionally.
     # With -Check, reports every difference without writing and returns the drift lines.
     param([string]$RepoRoot, [string]$SystemRoot, [switch]$Check)
 
@@ -601,16 +607,17 @@ function Invoke-PlatformConverge {
         }
     }
 
-    $workflowPath = Join-Path $RepoRoot $Script:WorkflowTarget
-    $expectedWorkflow = Get-CanonicalContent -SystemRoot $SystemRoot -SourceRelative $Script:WorkflowSource
-    $workflowCurrent = (Test-Path -LiteralPath $workflowPath -PathType Leaf) -and
-        (Compare-NormalizedContent $expectedWorkflow ([System.IO.File]::ReadAllText($workflowPath)))
-    if (-not $workflowCurrent) {
-        if (Test-Path -LiteralPath $workflowPath -PathType Leaf) { $drift += ('{0}: stale' -f $Script:WorkflowTarget) } else { $drift += ('{0}: missing' -f $Script:WorkflowTarget) }
+    foreach ($sourceRelative in $Script:UnconditionalFiles.Keys) {
+        $targetRelative = $Script:UnconditionalFiles[$sourceRelative]
+        $target = Join-Path $RepoRoot $targetRelative
+        $expected = Get-CanonicalContent -SystemRoot $SystemRoot -SourceRelative $sourceRelative
+        $present = (Test-Path -LiteralPath $target -PathType Leaf)
+        if ($present -and (Compare-NormalizedContent $expected ([System.IO.File]::ReadAllText($target)))) { continue }
+        if ($present) { $drift += ('{0}: stale' -f $targetRelative) } else { $drift += ('{0}: missing' -f $targetRelative) }
         if (-not $Check) {
-            $workflowDirectory = Split-Path -Parent $workflowPath
-            if (-not (Test-Path -LiteralPath $workflowDirectory)) { New-Item -ItemType Directory -Path $workflowDirectory -Force | Out-Null }
-            Write-Utf8LfFile -Path $workflowPath -Content $expectedWorkflow
+            $directory = Split-Path -Parent $target
+            if (-not (Test-Path -LiteralPath $directory)) { New-Item -ItemType Directory -Path $directory -Force | Out-Null }
+            Write-Utf8LfFile -Path $target -Content $expected
         }
     }
 

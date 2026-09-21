@@ -1,0 +1,7 @@
+# Generated from docs/_system/integrations/git/gitattributes by OttoDoc.
+# Do not edit - the next converge overwrites this file.
+#
+# The engine writes LF everywhere so its output is byte-identical on every machine.
+# Without this rule a checkout with core.autocrlf=true holds docs/ as CRLF, and every
+# file an upgrade or regen rewrites then shows as modified with no content change.
+* text=auto eol=lf

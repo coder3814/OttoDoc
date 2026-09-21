@@ -86,6 +86,11 @@ try {
     $configured = @(Read-OttodocRecord -RepoRoot $repoRoot)
     $result = Invoke-PlatformConverge -RepoRoot $repoRoot -SystemRoot $systemRoot
     foreach ($item in $result['drift']) { Write-Output ('CONVERGED: {0}' -f $item) }
+    if ($result['drift'] -contains 'docs/.gitattributes: missing') {
+        # The rule arrives too late for this one run: Git flags a file whose size changed
+        # without comparing content, so a CRLF checkout still reads rewritten files as modified.
+        Write-Output 'NOTE: docs/.gitattributes is new. On a CRLF checkout (core.autocrlf=true) the files this upgrade rewrote show as modified with no content change until staged; git add -A clears them, and later upgrades stay clean.'
+    }
 
     & (Join-Path $systemRoot 'scripts/regen.ps1')
     if ($LASTEXITCODE -ne 0) { throw 'Lint or index regeneration failed under the new engine.' }

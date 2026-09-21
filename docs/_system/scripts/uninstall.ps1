@@ -3,7 +3,7 @@
 # owner first. The result is an uncommitted diff - git is the undo.
 #
 # Removes: every platform's generated files and blocks (converge to empty), the CI
-# workflow, the record, the ignore file, docs/_system/, and the governance pointer in
+# workflow, docs/.gitattributes, the record, the ignore file, docs/_system/, and the governance pointer in
 # the root index.
 # Preserves: every document, every generated index, every asset, and docs/_intake/.
 
@@ -21,10 +21,12 @@ try {
     $result = Invoke-PlatformConverge -RepoRoot $repoRoot -SystemRoot $systemRoot
     foreach ($item in $result['drift']) { Write-Output ('CONVERGED: {0}' -f $item) }
 
-    $workflowPath = Join-Path $repoRoot $Script:WorkflowTarget
-    if (Test-Path -LiteralPath $workflowPath -PathType Leaf) {
-        Remove-GeneratedFile -Path $workflowPath
-        Write-Output ('REMOVED: {0}' -f $Script:WorkflowTarget)
+    foreach ($targetRelative in $Script:UnconditionalFiles.Values) {
+        $target = Join-Path $repoRoot $targetRelative
+        if (Test-Path -LiteralPath $target -PathType Leaf) {
+            Remove-GeneratedFile -Path $target
+            Write-Output ('REMOVED: {0}' -f $targetRelative)
+        }
     }
     Remove-Item -LiteralPath (Join-Path $repoRoot $Script:RecordTarget) -Force
     Write-Output ('REMOVED: {0}' -f $Script:RecordTarget)

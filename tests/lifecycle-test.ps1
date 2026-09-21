@@ -46,6 +46,7 @@ try {
     Assert (Test-Path (Join-Path $repo '.agents\skills\ottodoc-assess\SKILL.md')) 'Codex owned file written'
     Assert ((Read-Text (Join-Path $repo 'AGENTS.md')).Contains('ottodoc:begin')) 'AGENTS.md carries the block'
     Assert (Test-Path (Join-Path $repo '.github\workflows\docs.yml')) 'CI workflow written'
+    Assert ((Read-Text (Join-Path $repo 'docs\.gitattributes')).Contains('* text=auto eol=lf')) 'docs/.gitattributes written'
 
     & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'check passes after install'
@@ -255,13 +256,21 @@ The answer is 42.
     Assert (($out -join "`n").Contains('UPGRADE REFUSED')) 'refusal names the clean-tree gate'
     Remove-Item (Join-Path $repo 'dirty.txt') -Force
 
+    # The checkout a Windows owner actually has: autocrlf on, every file re-materialized
+    # by Git. Without docs/.gitattributes this holds docs/ as CRLF, and the upgrade below
+    # reports every file it rewrites as modified.
+    git config core.autocrlf true
+    git config core.safecrlf false
     git add -A
     git commit -q -m 'baseline before upgrade'
+    git rm -r -q --cached .
+    git reset -q --hard
     $ignoreBeforeUpgrade = Read-Text $ignorePath
     $out = & (Join-Path $scripts 'upgrade.ps1') -ArchivePath $zip
     Assert ($LASTEXITCODE -eq 0) 'upgrade from local archive exits 0'
     Assert (($out -join "`n").Contains('UPGRADE OK')) 'upgrade reports success'
     Assert ((Read-Record) -eq 'platforms: Claude') 'record survives upgrade'
+    Assert (@(git status --porcelain).Count -eq 0) 'upgrading to an identical engine leaves no phantom modifications under autocrlf'
     Assert ((Read-Text $ignorePath) -eq $ignoreBeforeUpgrade) 'ignore file byte-identical after upgrade'
     & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'check passes after upgrade'
@@ -283,6 +292,7 @@ The answer is 42.
     Assert ($LASTEXITCODE -eq 0) 'uninstall exits 0'
     Assert (-not (Test-Path (Join-Path $repo 'docs\_system'))) 'docs/_system removed'
     Assert (-not (Test-Path (Join-Path $repo '.github\workflows\docs.yml'))) 'CI workflow removed'
+    Assert (-not (Test-Path (Join-Path $repo 'docs\.gitattributes'))) 'docs/.gitattributes removed'
     Assert (-not (Test-Path (Join-Path $repo 'docs\.ottodoc'))) 'record removed'
     Assert (-not (Test-Path $ignorePath)) 'ignore file removed'
     Assert (-not ((Test-Path (Join-Path $repo '.claude')) -or (Test-Path (Join-Path $repo 'CLAUDE.md')))) 'Claude adapters removed'
