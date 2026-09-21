@@ -266,6 +266,16 @@ The answer is 42.
     & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'check passes after upgrade'
 
+    # --- upgrading a repository that has no ignore file gives it a fresh install's boundary ---
+    Remove-Item -LiteralPath $ignorePath -Force
+    git add -A
+    git commit -q -m 'installed before the ignore file existed'
+    $out = (& (Join-Path $scripts 'upgrade.ps1') -ArchivePath $zip) -join "`n"
+    Assert ($LASTEXITCODE -eq 0) 'upgrade without an ignore file exits 0'
+    Assert (@($seeded | Where-Object { (Read-IgnoreLines) -cnotcontains $_ }).Count -eq 0) 'upgrade seeds a missing ignore file whole'
+    Assert ($out.Contains('CREATED: docs/.ottodocignore') -and $out.Contains('/CLAUDE.md')) 'upgrade announces the new boundary and its patterns'
+    Assert (-not $out.Contains('is missing')) 'the upgrade''s own lint no longer reports a missing ignore file'
+
     # --- uninstall preserves the tree; reinstall restores the index byte-identically ---
     $indexBefore = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes((Join-Path $repo 'docs\index.md')))
 

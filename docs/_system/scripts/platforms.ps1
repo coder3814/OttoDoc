@@ -155,8 +155,8 @@ function Add-OttodocIgnorePatterns {
             '# Paths outside the documented system, in .gitignore syntax. A change confined'
             '# to them owes no change note, and documentation assessment disregards them.'
             '# docs/ and Git''s own files are always outside and are not listed here'
-            '# (docs/_system/constitution.md section 8). This file is yours: OttoDoc seeds it'
-            '# at install and appends a newly configured platform''s paths, nothing more.'
+            '# (docs/_system/constitution.md section 8). This file is yours: OttoDoc creates it'
+            '# when absent and appends a newly configured platform''s paths, nothing more.'
             ''
         ) -join "`n"
         $content += "`n"

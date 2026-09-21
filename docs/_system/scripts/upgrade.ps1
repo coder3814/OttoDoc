@@ -75,6 +75,14 @@ try {
         Write-Output 'CREATED: docs/_intake/'
     }
 
+    # A repository installed before the ignore file existed, or one that lost it, gets
+    # the same boundary a fresh install has. An existing file is the owner's and is
+    # not touched. Announced, because it changes which paths owe a change note.
+    if (-not (Test-Path -LiteralPath (Join-Path $repoRoot $Script:IgnoreTarget) -PathType Leaf)) {
+        $seededPatterns = @(Add-OttodocIgnorePatterns -RepoRoot $repoRoot)
+        Write-Output ('CREATED: {0} - new system boundary: changes confined to {1} owe no change note. Review the defaults; the file is yours to edit.' -f $Script:IgnoreTarget, ($seededPatterns -join ', '))
+    }
+
     $configured = @(Read-OttodocRecord -RepoRoot $repoRoot)
     $result = Invoke-PlatformConverge -RepoRoot $repoRoot -SystemRoot $systemRoot
     foreach ($item in $result['drift']) { Write-Output ('CONVERGED: {0}' -f $item) }

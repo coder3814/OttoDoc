@@ -273,7 +273,7 @@ elseif (Test-Path -LiteralPath (Join-Path $docsRoot '.ottodoc') -PathType Leaf) 
     # Installed, but the owner's half of the boundary is gone: agent instruction files
     # and adapters count as the system again. Install's own pre-seed lint has no record
     # yet and stays quiet.
-    Write-Output 'IGNORE: docs/.ottodocignore is missing - only docs/ and Git''s own files are outside the documented system; OttoDoc configure <platform> reseeds it'
+    Write-Output 'IGNORE: docs/.ottodocignore is missing - only docs/ and Git''s own files are outside the documented system; OttoDoc upgrade or OttoDoc configure <platform> reseeds it'
 }
 
 # --- Report ---
