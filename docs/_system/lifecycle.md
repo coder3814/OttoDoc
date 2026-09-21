@@ -12,6 +12,24 @@ platforms: Claude, Codex
 
 It lives outside `_system/` so it survives engine replacement, is committed like any other file, and is removed only by uninstall. Zero configured platforms is an ordinary state — the engine still works and CI still runs. Which platforms a repository uses is owner intent: it is always read from the record, never guessed from files lying around.
 
+## The ignore file
+
+`docs/.ottodocignore` is the owner's half of the system boundary (constitution §8): the paths held outside the documented system, one `.gitignore`-syntax pattern per line. A change confined to them owes no change note, and the coordinator drops them from any change it assesses. `docs/` and Git's own files are outside the system by law and are never listed.
+
+```
+/CLAUDE.md
+/.claude/
+/AGENTS.md
+/.codex/
+/.agents/
+/.cursor/
+/.github/workflows/docs.yml
+```
+
+That is the file as install seeds it — every supported platform's surfaces, configured or not, since a pattern for a file that does not exist costs nothing — plus the CI workflow. From then on the file is the owner's, exactly as the record is: add the repository's own process files, or delete a seeded line when an agent instruction file genuinely is the product. Upgrade and converge never read or rewrite it. The one later write is `configure`, which appends a platform's patterns when that platform is first added to the record and they are absent; refreshing an already configured platform appends nothing, so a line the owner removed stays removed. `remove` leaves the file alone.
+
+Nothing in the tooling enforces the patterns — the working agent and the coordinator read them. Where a platform has a prompt-time extension point (below), the patterns are injected with the change-note obligation, because whether a change owes a note is decided mid-task. An ignore file fails silently: an over-broad pattern simply stops notes being filed for that path. Lint therefore prints the active patterns as one informational line on every run, beside the intake count.
+
 ## The adapter map
 
 Every OttoDoc verb except `install` — the fifteen command verbs `assess`, `create`, `update`, `rename`, `move`, `retire`, `intake`, `review`, `check`, `fix`, `explain`, `upgrade`, `configure`, `remove`, and `uninstall` — is generated as one slash-command adapter per platform: a `/ottodoc-<verb>` skill on Claude, an `ottodoc-<verb>` skill on Codex (invoked as `$ottodoc-<verb>`, since Codex has no repository-level slash commands), and a `/ottodoc-<verb>` command on Cursor. `install` has no adapter because it necessarily runs before any adapter exists.
@@ -29,7 +47,7 @@ Every OttoDoc verb except `install` — the fifteen command verbs `assess`, `cre
 
 The static "Using the documentation" block alone does not reliably make agents route from the knowledge tree on judgment tasks — evaluating a backlog, prioritizing work — because instructions resting in static context lose to task momentum. The same is true of filing the change note before a change lands, which competes with the momentum of shipping. Where a platform offers a prompt-time extension point, OttoDoc therefore injects both standing obligations — routing from the tree, and filing and keeping current the change note for the accumulated change — into every user prompt.
 
-On Claude, that surface is a `UserPromptSubmit` hook: the owned script `.claude/hooks/doc-routing.js` emits both obligations as `additionalContext`, and converge merges its registration — one command entry running `node .claude/hooks/doc-routing.js` — into the shared `.claude/settings.json`. The injected text is platform-generic and complements the `CLAUDE.md` block; it does not replace it. The script keeps its original name though it now carries both obligations: the path is an owned adapter path, and renaming it would churn every installation for no functional gain.
+On Claude, that surface is a `UserPromptSubmit` hook: the owned script `.claude/hooks/doc-routing.js` emits both obligations as `additionalContext` — reading `docs/.ottodocignore` on each prompt so the system boundary it states is the current one — and converge merges its registration — one command entry running `node .claude/hooks/doc-routing.js` — into the shared `.claude/settings.json`. The injected text is platform-generic and complements the `CLAUDE.md` block; it does not replace it. The script keeps its original name though it now carries both obligations: the path is an owned adapter path, and renaming it would churn every installation for no functional gain.
 
 > [!IMPORTANT]
 > Project-settings hooks do not execute in headless Claude Code sessions (`claude -p`) until the project has been trusted once interactively. Open the project in an interactive session and approve the one-time prompt, or headless agents silently run without the obligations hook — changes can then land without their change note as well as unrouted.
@@ -79,13 +97,13 @@ A settings file that is not a JSON object — unparseable, or a JSON array or sc
 
 | Command | Script | Effect |
 |---|---|---|
-| install | `scripts/bootstrap.ps1 -Platform <name>` | Copy `_system/` into `<repo>/docs/_system`, then: create kind directories and `_intake/`, write the record, converge, lint + regen |
+| install | `scripts/bootstrap.ps1 -Platform <name>` | Copy `_system/` into `<repo>/docs/_system`, then: create kind directories and `_intake/`, write the record, seed the ignore file, converge, lint + regen |
 | upgrade | `scripts/upgrade.ps1` | Replace `docs/_system/` wholesale from the OttoDoc repository, then converge, lint + regen |
-| configure | `scripts/configure-platform.ps1 -Platform <name>` | Add the platform to the record, converge |
+| configure | `scripts/configure-platform.ps1 -Platform <name>` | Add the platform to the record, append a newly added platform's patterns to the ignore file, converge |
 | remove | `scripts/remove-platform.ps1 -Platform <name>` | Remove the platform from the record, converge; removing the last platform is fine |
-| uninstall | `scripts/uninstall.ps1` | Converge to zero platforms, then delete the workflow, the record, `docs/_system/`, and the root index's governance pointer — every document, index, asset, and `_intake/` survives |
+| uninstall | `scripts/uninstall.ps1` | Converge to zero platforms, then delete the workflow, the record, the ignore file, `docs/_system/`, and the root index's governance pointer — every document, index, asset, and `_intake/` survives |
 | check | `scripts/check-adapters.ps1` | Converge `-Check`: report drift, change nothing |
 
-Lifecycle commands may modify only the engine, the mapped adapter paths, OttoDoc's block in shared files, the record, the workflow, and the generated indexes; nothing else in the repository is theirs to touch. Install fails closed: pre-existing nonconforming documents abort it with no existing content modified. Upgrade requires a clean git tree and refuses to run over uncommitted changes.
+Lifecycle commands may modify only the engine, the mapped adapter paths, OttoDoc's block in shared files, the record, the ignore file as described above, the workflow, and the generated indexes; nothing else in the repository is theirs to touch. Install fails closed: pre-existing nonconforming documents abort it with no existing content modified. Upgrade requires a clean git tree and refuses to run over uncommitted changes.
 
 **Git is the undo.** Every command leaves its result as an uncommitted diff for review; none commits or pushes, and none keeps backups or performs rollback. If a command fails partway, inspect the diff and use `git restore` to return to the last commit.

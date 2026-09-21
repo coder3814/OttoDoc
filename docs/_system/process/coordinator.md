@@ -20,6 +20,8 @@ The change is the branch's diff against its merge base with the mainline, togeth
 
 Assess files under `docs/_intake/` only when the user explicitly requests intake processing; file placement alone is inert. Formatting-only, comment-only, generated-only, Git-only, and documentation-only changes require no impact assessment and file no change note; the documentation changes this workflow itself produces are therefore exempt.
 
+The system you assess has a boundary (constitution §8). `docs/`, Git's own files, and every path matching a pattern in `docs/.ottodocignore` — read it before you read the diff — are outside it. Drop those paths from the change before assessing: they are not evidence of documentation impact, a change that holds nothing else is "no documentation change justified" without further inspection, and a change note that records them is mistaken on that point, not authoritative.
+
 ## Assess
 
 Inspect the change's stated purpose, the documentation-impact notes its tasks reported, the accumulated diff, affected repository behavior, and related current documentation. Those notes are evidence, not a verdict: a task that reported no impact may still belong to a change that needs documentation, and impact a task flagged may have been absorbed by a later task in the same change. Stay bounded to the change as defined above; a diff spanning several tasks is still not a license for a repository-wide audit.
