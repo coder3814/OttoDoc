@@ -4,7 +4,7 @@
 #   powershell.exe -File tests/lifecycle-test.ps1
 #
 # Exercises the supported 90%: install, check, additive configure with owner content
-# in a shared file, remove down to zero platforms, upgrade from a local archive with
+# in a shared file, the owner-owned ignore file, remove down to zero platforms, upgrade from a local archive with
 # the clean-tree gate, uninstall, and byte-identical reinstall.
 
 [CmdletBinding()]
@@ -27,6 +27,7 @@ function Assert {
 
 function Read-Text([string]$Path) { return [System.IO.File]::ReadAllText($Path) }
 function Read-Record { return (Read-Text (Join-Path $repo 'docs\.ottodoc')).Trim() }
+function Read-IgnoreLines { return @((Read-Text (Join-Path $repo 'docs\.ottodocignore')).Replace("`r`n", "`n").Split("`n")) }
 
 New-Item -ItemType Directory -Path $repo -Force | Out-Null
 Push-Location $repo
@@ -49,6 +50,17 @@ try {
     & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'check passes after install'
 
+    # --- install seeds the ignore file with every platform's surfaces, not only Codex's ---
+    $ignorePath = Join-Path $repo 'docs\.ottodocignore'
+    Assert (Test-Path $ignorePath) 'install seeds docs/.ottodocignore'
+    $seeded = @('/CLAUDE.md', '/.claude/', '/AGENTS.md', '/.codex/', '/.agents/', '/.cursor/', '/.github/workflows/docs.yml')
+    Assert (@($seeded | Where-Object { (Read-IgnoreLines) -cnotcontains $_ }).Count -eq 0) 'the seed lists every supported platform and the workflow'
+    Assert ((Read-IgnoreLines) -cnotcontains '/docs/' -and (Read-IgnoreLines) -cnotcontains 'docs/') 'the built-in boundary is not listed in the file'
+
+    # The file is the owner's: one pattern added, one seeded pattern deliberately removed.
+    $owned = @(Read-IgnoreLines | Where-Object { $_ -cne '/.cursor/' }) -join "`n"
+    [System.IO.File]::WriteAllText($ignorePath, $owned.TrimEnd("`n") + "`n/ToDo.md`n")
+
     # --- owner content around the block survives configure ---
     $agentsPath = Join-Path $repo 'AGENTS.md'
     [System.IO.File]::WriteAllText($agentsPath, "# Owner heading`n`n" + (Read-Text $agentsPath) + "`nOwner trailing note.`n")
@@ -70,6 +82,14 @@ try {
     $settings = Read-Text $settingsPath
     Assert ($settings.Contains('"Bash"')) 'owner settings survive the hook merge'
     Assert ($settings.Contains('doc-routing.js') -and $settings.Contains('UserPromptSubmit')) 'settings.json carries the routing hook'
+    Assert ((Read-IgnoreLines) -ccontains '/ToDo.md') 'owner pattern survives configure'
+    Assert ((Read-IgnoreLines) -cnotcontains '/.cursor/') 'configuring Claude does not restore another platform''s removed pattern'
+    Assert (@(Read-IgnoreLines | Where-Object { $_ -ceq '/CLAUDE.md' }).Count -eq 1) 'configure does not duplicate a pattern already listed'
+
+    if (Get-Command node -ErrorAction SilentlyContinue) {
+        $injected = (& node (Join-Path $repo '.claude\hooks\doc-routing.js')) -join "`n"
+        Assert ($injected.Contains('/ToDo.md') -and $injected.Contains('/CLAUDE.md')) 'the hook injects the current ignore patterns'
+    }
 
     & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'check passes with two platforms'
@@ -81,6 +101,12 @@ try {
     & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
     $settings = Read-Text $settingsPath
     Assert ($settings.Contains('"Bash"') -and $settings.Contains('doc-routing.js')) 'converge re-merges the hook beside owner settings'
+
+    # --- refreshing a configured platform never restores a pattern the owner removed ---
+    $ignoreWithout = @(Read-IgnoreLines | Where-Object { $_ -cne '/CLAUDE.md' }) -join "`n"
+    [System.IO.File]::WriteAllText($ignorePath, $ignoreWithout)
+    & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
+    Assert ((Read-Text $ignorePath) -eq $ignoreWithout) 'refreshing Claude leaves the ignore file byte-identical'
 
     # --- converge leaves a settings file that already carries the hook untouched ---
     $settingsBefore = Read-Text $settingsPath
@@ -196,6 +222,7 @@ The answer is 42.
     $out = & (Join-Path $scripts 'lint.ps1')
     Assert ($LASTEXITCODE -eq 0) 'lint still exits 0 with a change note in intake'
     Assert (($out -join "`n").Contains('INTAKE: 1 change note(s) awaiting processing')) 'lint prints the INTAKE line for the change note'
+    Assert (($out -join "`n").Contains('IGNORE: ') -and ($out -join "`n").Contains('/ToDo.md')) 'lint prints the active ignore patterns'
     Remove-Item -LiteralPath $notePath -Force
     & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'configure Claude again exits 0'
@@ -216,10 +243,12 @@ The answer is 42.
 
     git add -A
     git commit -q -m 'baseline before upgrade'
+    $ignoreBeforeUpgrade = Read-Text $ignorePath
     $out = & (Join-Path $scripts 'upgrade.ps1') -ArchivePath $zip
     Assert ($LASTEXITCODE -eq 0) 'upgrade from local archive exits 0'
     Assert (($out -join "`n").Contains('UPGRADE OK')) 'upgrade reports success'
     Assert ((Read-Record) -eq 'platforms: Claude') 'record survives upgrade'
+    Assert ((Read-Text $ignorePath) -eq $ignoreBeforeUpgrade) 'ignore file byte-identical after upgrade'
     & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'check passes after upgrade'
 
@@ -231,6 +260,7 @@ The answer is 42.
     Assert (-not (Test-Path (Join-Path $repo 'docs\_system'))) 'docs/_system removed'
     Assert (-not (Test-Path (Join-Path $repo '.github\workflows\docs.yml'))) 'CI workflow removed'
     Assert (-not (Test-Path (Join-Path $repo 'docs\.ottodoc'))) 'record removed'
+    Assert (-not (Test-Path $ignorePath)) 'ignore file removed'
     Assert (-not ((Test-Path (Join-Path $repo '.claude')) -or (Test-Path (Join-Path $repo 'CLAUDE.md')))) 'Claude adapters removed'
     Assert (Test-Path (Join-Path $repo 'docs\reference\test-fact.md')) 'document preserved'
     Assert (Test-Path (Join-Path $repo 'docs\index.md')) 'root index preserved'
@@ -240,6 +270,7 @@ The answer is 42.
     Copy-Item -Recurse -LiteralPath (Join-Path $sourceRepo 'docs\_system') -Destination (Join-Path $repo 'docs\_system')
     & (Join-Path $scripts 'bootstrap.ps1') -Platform Codex | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'reinstall exits 0'
+    Assert ((Read-IgnoreLines) -ccontains '/.cursor/' -and (Read-IgnoreLines) -cnotcontains '/ToDo.md') 'reinstall seeds a fresh ignore file'
     $indexAfter = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes((Join-Path $repo 'docs\index.md')))
     Assert ($indexBefore -eq $indexAfter) 'root index byte-identical after reinstall'
 }

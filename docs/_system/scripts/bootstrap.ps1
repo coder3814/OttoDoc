@@ -1,6 +1,6 @@
 # Bootstraps the portable documentation engine in a repository (lifecycle.md: install).
 # Creates missing kind directories and docs/_intake/, records the chosen platform,
-# converges, and generates the indexes. Fails closed: a pre-existing nonconformant
+# seeds docs/.ottodocignore, converges, and generates the indexes. Fails closed: a pre-existing nonconformant
 # tree aborts the install with nothing modified.
 
 [CmdletBinding()]
@@ -37,6 +37,12 @@ if ($LASTEXITCODE -ne 0) {
 
 try {
     Write-OttodocRecord -RepoRoot $repoRoot -Platforms @($Platform)
+    # Every supported platform's surfaces, not only the chosen one's: a pattern for a
+    # file that does not exist costs nothing, and the owner prunes the list, not OttoDoc.
+    $ignore = @()
+    foreach ($name in $Script:SupportedPlatforms) { $ignore += $Script:PlatformAdapters[$name]['Ignore'] }
+    $ignore += ('/' + $Script:WorkflowTarget)
+    Add-OttodocIgnorePatterns -RepoRoot $repoRoot -Patterns $ignore | Out-Null
     Invoke-PlatformConverge -RepoRoot $repoRoot -SystemRoot $systemRoot | Out-Null
 }
 catch {

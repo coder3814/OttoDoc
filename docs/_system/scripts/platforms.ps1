@@ -21,7 +21,9 @@ $Script:CommandVerbs = @(
 # settings file into which converge merges exactly one prompt-time hook registration
 # (SettingsEvent running SettingsCommand); only Claude has such an extension point
 # today - for the other platforms the gap is documented in lifecycle.md rather than
-# approximated with more static text.
+# approximated with more static text. Ignore lists the .gitignore-syntax patterns
+# that hold the platform's surfaces outside the documented system; they are seeded
+# into docs/.ottodocignore (below), never enforced from here.
 $Script:PlatformAdapters = [ordered]@{
     'Claude' = [ordered]@{
         Owned = [ordered]@{
@@ -35,6 +37,7 @@ $Script:PlatformAdapters = [ordered]@{
         SettingsTarget = '.claude/settings.json'
         SettingsEvent = 'UserPromptSubmit'
         SettingsCommand = 'node .claude/hooks/doc-routing.js'
+        Ignore = @('/CLAUDE.md', '/.claude/')
     }
     'Codex' = [ordered]@{
         Owned = [ordered]@{
@@ -47,6 +50,7 @@ $Script:PlatformAdapters = [ordered]@{
         SettingsTarget = ''
         SettingsEvent = ''
         SettingsCommand = ''
+        Ignore = @('/AGENTS.md', '/.codex/', '/.agents/')
     }
     'Cursor' = [ordered]@{
         Owned = [ordered]@{
@@ -61,6 +65,7 @@ $Script:PlatformAdapters = [ordered]@{
         SettingsTarget = ''
         SettingsEvent = ''
         SettingsCommand = ''
+        Ignore = @('/.cursor/')
     }
 }
 
@@ -79,6 +84,7 @@ foreach ($commandVerb in $Script:CommandVerbs) {
 $Script:WorkflowSource = 'integrations/github-actions/docs.yml'
 $Script:WorkflowTarget = '.github/workflows/docs.yml'
 $Script:RecordTarget = 'docs/.ottodoc'
+$Script:IgnoreTarget = 'docs/.ottodocignore'
 
 # Only the bare tokens are load-bearing. The surrounding marker prose is for humans
 # and may be reworded by a later engine version without orphaning installed blocks.
@@ -119,6 +125,41 @@ function Write-OttodocRecord {
     $ordered = @(Select-OrderedPlatforms $Platforms)
     $content = ('platforms: ' + ($ordered -join ', ')).TrimEnd() + "`n"
     Write-Utf8LfFile -Path (Join-Path $RepoRoot $Script:RecordTarget) -Content $content
+}
+
+# ---------------------------------------------------------------------------
+# The ignore file
+# ---------------------------------------------------------------------------
+
+function Add-OttodocIgnorePatterns {
+    # Seeds docs/.ottodocignore (lifecycle.md): creates it with its header when absent
+    # and appends whichever of $Patterns it does not already list. The file is the
+    # owner's - nothing here rewrites or removes a line. Returns the patterns added.
+    param([string]$RepoRoot, [string[]]$Patterns)
+    $path = Join-Path $RepoRoot $Script:IgnoreTarget
+    $content = ''
+    $style = Get-SharedFileStyle -Path $path
+    if (Test-Path -LiteralPath $path -PathType Leaf) {
+        $content = [System.IO.File]::ReadAllText($path).Replace("`r`n", "`n")
+    }
+    else {
+        $content = @(
+            '# Paths outside the documented system, in .gitignore syntax. A change confined'
+            '# to them owes no change note, and documentation assessment disregards them.'
+            '# docs/ and Git''s own files are always outside and are not listed here'
+            '# (docs/_system/constitution.md section 8). This file is yours: OttoDoc seeds it'
+            '# at install and appends a newly configured platform''s paths, nothing more.'
+            ''
+        ) -join "`n"
+        $content += "`n"
+    }
+    $listed = @($content.Split("`n") | ForEach-Object { $_.Trim() })
+    $added = @($Patterns | Where-Object { $listed -notcontains $_ })
+    if ($added.Count -eq 0 -and (Test-Path -LiteralPath $path -PathType Leaf)) { return @() }
+    if ($content -ne '' -and -not $content.EndsWith("`n")) { $content += "`n" }
+    foreach ($pattern in $added) { $content += ($pattern + "`n") }
+    Write-SharedFile -Path $path -Content $content -Style $style
+    return $added
 }
 
 # ---------------------------------------------------------------------------

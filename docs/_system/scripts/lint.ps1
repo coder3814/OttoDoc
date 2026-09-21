@@ -44,8 +44,8 @@ foreach ($entry in (Get-ChildItem -LiteralPath $docsRoot -Force)) {
             Add-Err $entry.Name ('unknown root directory - the root of docs/ is the closed set of kinds (constitution section 2)')
         }
     }
-    elseif ($entry.Name -ne 'index.md' -and $entry.Name -ne '.ottodoc') {
-        Add-Err $entry.Name 'stray file at docs/ root - only the generated index.md and the .ottodoc record live here'
+    elseif ($entry.Name -ne 'index.md' -and $entry.Name -ne '.ottodoc' -and $entry.Name -ne '.ottodocignore') {
+        Add-Err $entry.Name 'stray file at docs/ root - only the generated index.md, the .ottodoc record, and .ottodocignore live here'
     }
 }
 foreach ($kind in $Script:KindDirs.Keys) {
@@ -255,6 +255,18 @@ if (Test-Path -LiteralPath $intakePath -PathType Container) {
     $changeNotes = @(Get-ChildItem -LiteralPath $intakePath -File -Force | Where-Object { $_.Name -clike 'change-*.md' })
     if ($changeNotes.Count -gt 0) {
         Write-Output ('INTAKE: {0} change note(s) awaiting processing' -f $changeNotes.Count)
+    }
+}
+
+# --- System boundary: one informational line, never a failure (constitution section 8).
+#     An ignore file fails silently - an over-broad pattern just stops notes being
+#     filed - so the active patterns are surfaced wherever lint runs. ---
+$ignorePath = Join-Path $docsRoot '.ottodocignore'
+if (Test-Path -LiteralPath $ignorePath -PathType Leaf) {
+    $ignorePatterns = @([System.IO.File]::ReadAllText($ignorePath).Replace("`r`n", "`n").Split("`n") |
+        ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' -and -not $_.StartsWith('#') })
+    if ($ignorePatterns.Count -gt 0) {
+        Write-Output ('IGNORE: {0} pattern(s) outside the documented system: {1}' -f $ignorePatterns.Count, ($ignorePatterns -join ' '))
     }
 }
 

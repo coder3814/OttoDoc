@@ -3,7 +3,8 @@
 # owner first. The result is an uncommitted diff - git is the undo.
 #
 # Removes: every platform's generated files and blocks (converge to empty), the CI
-# workflow, the record, docs/_system/, and the governance pointer in the root index.
+# workflow, the record, the ignore file, docs/_system/, and the governance pointer in
+# the root index.
 # Preserves: every document, every generated index, every asset, and docs/_intake/.
 
 [CmdletBinding()]
@@ -27,6 +28,11 @@ try {
     }
     Remove-Item -LiteralPath (Join-Path $repoRoot $Script:RecordTarget) -Force
     Write-Output ('REMOVED: {0}' -f $Script:RecordTarget)
+    $ignorePath = Join-Path $repoRoot $Script:IgnoreTarget
+    if (Test-Path -LiteralPath $ignorePath -PathType Leaf) {
+        Remove-Item -LiteralPath $ignorePath -Force
+        Write-Output ('REMOVED: {0}' -f $Script:IgnoreTarget)
+    }
 
     # The governance pointer is uninstall's only edit inside the knowledge tree.
     $rootIndex = Join-Path $docsRoot 'index.md'
