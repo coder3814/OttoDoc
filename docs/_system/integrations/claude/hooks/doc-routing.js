@@ -6,7 +6,35 @@
 // obligations, but static context loses to task momentum on judgment tasks;
 // context injected at prompt time does not. This script complements the block,
 // it does not replace it.
+//
+// The owner's half of the system boundary - docs/.ottodocignore - is read here
+// on every prompt, because whether a change owes a note is decided mid-task,
+// when no agent goes and opens a configuration file.
 'use strict';
+
+const fs = require('fs');
+const path = require('path');
+
+let ignored = [];
+try {
+  ignored = fs
+    .readFileSync(path.join(__dirname, '..', '..', 'docs', '.ottodocignore'), 'utf8')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line !== '' && !line.startsWith('#'));
+} catch (err) {
+  // No ignore file: only the built-in boundary applies.
+}
+
+const boundary =
+  'The documented system has a boundary: docs/ and Git\'s own files ' +
+  '(.git/, .gitignore, .gitattributes) are never part of it' +
+  (ignored.length > 0
+    ? ', and neither are the paths docs/.ottodocignore lists in .gitignore ' +
+      'syntax, currently: ' + ignored.join(' ') + '. '
+    : '. ') +
+  'A change confined to paths outside the system modifies no system and ' +
+  'owes no note; in a mixed change, leave those paths out of the note. ';
 
 const context =
   'Documentation routing (from the docs/ knowledge tree): Before forming any ' +
@@ -44,8 +72,9 @@ const context =
   'impact, decisions and the alternatives rejected, terms coined or ' +
   'resolved, facts the owner stated - and leave the documentation itself to ' +
   'OttoDoc intake, which the owner runs on their own schedule. Keep the note ' +
-  'current and commit it with the code. Formatting-only, comment-only, ' +
-  'generated-only, Git-only, and documentation-only changes need no note, ' +
+  'current and commit it with the code. ' + boundary +
+  'Formatting-only, comment-only, generated-only, Git-only, and ' +
+  'documentation-only changes need no note, ' +
   'and neither does a change the owner has had assessed with OttoDoc ' +
   'assess before it lands; docs/_system/constitution.md section 8 states ' +
   'the obligation whole. Landing a system-modifying change without its ' +
