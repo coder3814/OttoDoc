@@ -31,7 +31,7 @@ const boundary =
   '(.git/, .gitignore, .gitattributes) are never part of it' +
   (ignored.length > 0
     ? ', and neither are the paths docs/.ottodocignore lists in .gitignore ' +
-      'syntax, currently: ' + ignored.join(' ') + '. '
+      'syntax, currently: ' + ignored.join(', ') + '. '
     : '. ') +
   'A change confined to paths outside the system modifies no system and ' +
   'owes no note; in a mixed change, leave those paths out of the note. ';

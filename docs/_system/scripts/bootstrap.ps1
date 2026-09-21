@@ -37,12 +37,7 @@ if ($LASTEXITCODE -ne 0) {
 
 try {
     Write-OttodocRecord -RepoRoot $repoRoot -Platforms @($Platform)
-    # Every supported platform's surfaces, not only the chosen one's: a pattern for a
-    # file that does not exist costs nothing, and the owner prunes the list, not OttoDoc.
-    $ignore = @()
-    foreach ($name in $Script:SupportedPlatforms) { $ignore += $Script:PlatformAdapters[$name]['Ignore'] }
-    $ignore += ('/' + $Script:WorkflowTarget)
-    Add-OttodocIgnorePatterns -RepoRoot $repoRoot -Patterns $ignore | Out-Null
+    Add-OttodocIgnorePatterns -RepoRoot $repoRoot | Out-Null
     Invoke-PlatformConverge -RepoRoot $repoRoot -SystemRoot $systemRoot | Out-Null
 }
 catch {

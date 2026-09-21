@@ -132,11 +132,19 @@ function Write-OttodocRecord {
 # ---------------------------------------------------------------------------
 
 function Add-OttodocIgnorePatterns {
-    # Seeds docs/.ottodocignore (lifecycle.md): creates it with its header when absent
-    # and appends whichever of $Patterns it does not already list. The file is the
-    # owner's - nothing here rewrites or removes a line. Returns the patterns added.
-    param([string]$RepoRoot, [string[]]$Patterns)
+    # Seeds docs/.ottodocignore (lifecycle.md). An absent file is created whole - header
+    # plus every supported platform's surfaces and the workflow, whatever $Patterns asks
+    # for, since a pattern for a file that does not exist costs nothing and a partial
+    # file would read as authoritative. A present file only gains whichever of $Patterns
+    # it does not already list. The file is the owner's - nothing here rewrites or
+    # removes a line. Returns the patterns added.
+    param([string]$RepoRoot, [string[]]$Patterns = @())
     $path = Join-Path $RepoRoot $Script:IgnoreTarget
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+        $Patterns = @()
+        foreach ($name in $Script:SupportedPlatforms) { $Patterns += $Script:PlatformAdapters[$name]['Ignore'] }
+        $Patterns += ('/' + $Script:WorkflowTarget)
+    }
     $content = ''
     $style = Get-SharedFileStyle -Path $path
     if (Test-Path -LiteralPath $path -PathType Leaf) {

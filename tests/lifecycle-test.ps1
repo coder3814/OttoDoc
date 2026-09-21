@@ -108,6 +108,18 @@ try {
     & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
     Assert ((Read-Text $ignorePath) -eq $ignoreWithout) 'refreshing Claude leaves the ignore file byte-identical'
 
+    # --- a missing ignore file is reported by lint and reseeded whole, never partially ---
+    Remove-Item -LiteralPath $ignorePath -Force
+    $out = (& (Join-Path $scripts 'lint.ps1')) -join "`n"
+    Assert ($out.Contains('IGNORE: docs/.ottodocignore is missing')) 'lint reports a missing ignore file'
+    if (Get-Command node -ErrorAction SilentlyContinue) {
+        $injected = (& node (Join-Path $repo '.claude\hooks\doc-routing.js')) -join "`n"
+        Assert ($LASTEXITCODE -eq 0 -and $injected.Contains('are never part of it. ')) 'the hook states the built-in boundary alone when the file is missing'
+    }
+    & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
+    Assert (@($seeded | Where-Object { (Read-IgnoreLines) -cnotcontains $_ }).Count -eq 0) 'configure reseeds a missing ignore file whole'
+    [System.IO.File]::WriteAllText($ignorePath, $ignoreWithout)
+
     # --- converge leaves a settings file that already carries the hook untouched ---
     $settingsBefore = Read-Text $settingsPath
     & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
@@ -164,8 +176,10 @@ try {
     Assert ($LASTEXITCODE -eq 0) 'check passes again after repair'
 
     # --- remove Codex: files gone, block stripped, owner content intact ---
+    $ignoreBeforeRemove = Read-Text $ignorePath
     & (Join-Path $scripts 'remove-platform.ps1') -Platform Codex | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'remove -Platform Codex exits 0'
+    Assert ((Read-Text $ignorePath) -eq $ignoreBeforeRemove) 'remove leaves the ignore file byte-identical'
     Assert (-not (Test-Path (Join-Path $repo '.agents'))) '.agents adapter tree removed'
     Assert (-not (Test-Path (Join-Path $repo '.codex'))) '.codex adapter tree removed'
     $agents = Read-Text $agentsPath

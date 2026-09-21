@@ -17,12 +17,11 @@ try {
     $before = @(Read-OttodocRecord -RepoRoot $repoRoot)
     $target = @(Select-OrderedPlatforms ($before + @($Platform)))
     Write-OttodocRecord -RepoRoot $repoRoot -Platforms $target
-    # Only a newly added platform seeds the ignore file: a refresh must not restore a
-    # pattern the owner deliberately removed.
-    $ignored = @()
-    if ($before -notcontains $Platform) {
-        $ignored = @(Add-OttodocIgnorePatterns -RepoRoot $repoRoot -Patterns $Script:PlatformAdapters[$Platform]['Ignore'])
-    }
+    # Only a newly added platform appends to the ignore file: a refresh must not restore
+    # a pattern the owner deliberately removed. A missing file is reseeded whole either way.
+    $patterns = @()
+    if ($before -notcontains $Platform) { $patterns = @($Script:PlatformAdapters[$Platform]['Ignore']) }
+    $ignored = @(Add-OttodocIgnorePatterns -RepoRoot $repoRoot -Patterns $patterns)
     $result = Invoke-PlatformConverge -RepoRoot $repoRoot -SystemRoot $systemRoot
 }
 catch {
