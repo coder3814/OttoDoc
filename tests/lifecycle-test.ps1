@@ -26,7 +26,9 @@ function Assert {
 }
 
 function Read-Text([string]$Path) { return [System.IO.File]::ReadAllText($Path) }
-function Read-Record { return (Read-Text (Join-Path $repo 'docs\.ottodoc')).Trim() }
+# The platforms line only; the intake line is asserted on its own.
+function Read-Record { return @((Read-Text (Join-Path $repo 'docs\.ottodoc')).Replace("`r`n", "`n").Split("`n") | Where-Object { $_ -like 'platforms:*' })[0].Trim() }
+function Read-IntakeSetting { return @((Read-Text (Join-Path $repo 'docs\.ottodoc')).Replace("`r`n", "`n").Split("`n") | Where-Object { $_ -like 'intake:*' }) }
 function Read-IgnoreLines { return @((Read-Text (Join-Path $repo 'docs\.ottodocignore')).Replace("`r`n", "`n").Split("`n")) }
 
 New-Item -ItemType Directory -Path $repo -Force | Out-Null
@@ -40,9 +42,10 @@ try {
     Copy-Item -Recurse -LiteralPath (Join-Path $sourceRepo 'docs\_system') -Destination (Join-Path $repo 'docs\_system')
 
     # --- install Codex ---
-    & (Join-Path $scripts 'bootstrap.ps1') -Platform Codex | Out-Null
+    & (Join-Path $scripts 'bootstrap.ps1') -Platform Codex -Intake archive | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'bootstrap -Platform Codex exits 0'
     Assert ((Read-Record) -eq 'platforms: Codex') 'record is "platforms: Codex"'
+    Assert ((@(Read-IntakeSetting) -join '|') -eq 'intake: archive') 'record carries the intake setting chosen at install'
     Assert (Test-Path (Join-Path $repo '.agents\skills\ottodoc-assess\SKILL.md')) 'Codex owned file written'
     Assert ((Read-Text (Join-Path $repo 'AGENTS.md')).Contains('ottodoc:begin')) 'AGENTS.md carries the block'
     Assert (Test-Path (Join-Path $repo '.github\workflows\docs.yml')) 'CI workflow written'
@@ -74,6 +77,7 @@ try {
     & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'configure -Platform Claude exits 0'
     Assert ((Read-Record) -eq 'platforms: Claude, Codex') 'record is "platforms: Claude, Codex"'
+    Assert ((@(Read-IntakeSetting) -join '|') -eq 'intake: archive') 'configure preserves the intake setting'
     $agents = Read-Text $agentsPath
     Assert ($agents.Contains('# Owner heading') -and $agents.Contains('Owner trailing note.')) 'owner content in AGENTS.md survives configure'
     Assert ($agents.Contains('ottodoc:begin')) 'AGENTS.md block still present'
@@ -191,6 +195,7 @@ try {
     & (Join-Path $scripts 'remove-platform.ps1') -Platform Claude | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'remove -Platform Claude exits 0'
     Assert ((Read-Record) -eq 'platforms:') 'record shows zero platforms'
+    Assert ((@(Read-IntakeSetting) -join '|') -eq 'intake: archive') 'remove preserves the intake setting'
     Assert (-not (Test-Path (Join-Path $repo 'CLAUDE.md'))) 'CLAUDE.md deleted (block was all it held)'
     Assert (-not (Test-Path (Join-Path $repo '.claude\hooks\doc-routing.js'))) 'routing hook script removed'
     $settings = Read-Text $settingsPath
@@ -270,6 +275,7 @@ The answer is 42.
     Assert ($LASTEXITCODE -eq 0) 'upgrade from local archive exits 0'
     Assert (($out -join "`n").Contains('UPGRADE OK')) 'upgrade reports success'
     Assert ((Read-Record) -eq 'platforms: Claude') 'record survives upgrade'
+    Assert ((@(Read-IntakeSetting) -join '|') -eq 'intake: archive') 'intake setting survives upgrade'
     Assert (@(git status --porcelain).Count -eq 0) 'upgrading to an identical engine leaves no phantom modifications under autocrlf'
     Assert ((Read-Text $ignorePath) -eq $ignoreBeforeUpgrade) 'ignore file byte-identical after upgrade'
     & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
@@ -310,7 +316,7 @@ The answer is 42.
     Assert (-not (Read-Text (Join-Path $repo 'docs\index.md')).Contains('Governed by')) 'governance pointer removed from root index'
 
     Copy-Item -Recurse -LiteralPath (Join-Path $sourceRepo 'docs\_system') -Destination (Join-Path $repo 'docs\_system')
-    & (Join-Path $scripts 'bootstrap.ps1') -Platform Codex | Out-Null
+    & (Join-Path $scripts 'bootstrap.ps1') -Platform Codex -Intake archive | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'reinstall exits 0'
     Assert ((Read-IgnoreLines) -ccontains '/.cursor/' -and (Read-IgnoreLines) -cnotcontains '/ToDo.md') 'reinstall seeds a fresh ignore file'
     $indexAfter = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes((Join-Path $repo 'docs\index.md')))
