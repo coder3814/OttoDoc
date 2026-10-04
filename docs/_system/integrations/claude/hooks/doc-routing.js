@@ -65,7 +65,8 @@ const context =
   'change owes before it lands - before you ' +
   'commit it or raise a pull request - is a change note in docs/_intake/: ' +
   'when the first system-modifying task in this change completes, read the ' +
-  'subject: frontmatter line of each change note already in docs/_intake/; ' +
+  'subject: frontmatter line of each change note directly in docs/_intake/ ' +
+  '(never under archive/); ' +
   'if one concerns the same feature, behaviour, or decision, revise that ' +
   'note, and otherwise create docs/_intake/change-<YYYY-MM-DD>-<slug>.md ' +
   'from docs/_system/templates/change-note.md. As later tasks finish, keep ' +
