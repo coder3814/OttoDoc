@@ -44,7 +44,7 @@ Terminology is impact. A change that coins a new domain concept, resolves which 
 
 Report unrelated implementation concerns separately without fixing them or creating files or issues.
 
-For `OttoDoc intake [filename]`, treat the filename as optional. With one filename, assess that direct child of `docs/_intake/`; with no filename, assess every file currently in the folder. Reject paths, directories, multiple filenames, filename patterns, duplicate filenames, and files the active agent cannot read. When a human draft yields no live documentation, report that conclusion and obtain owner approval before dispatching deletion. A change note (`change-*.md`) that yields none is deleted without approval: report the outcome and dispatch the deletion.
+For `OttoDoc intake [filename]`, treat the filename as optional. With one filename, assess that direct child of `docs/_intake/`; with no filename, assess every file currently in the folder. Reject paths, directories, multiple filenames, filename patterns, duplicate filenames, and files the active agent cannot read. Read the `intake:` line of `docs/.ottodoc` before processing; if it is missing or is neither `archive` nor `delete`, ask the owner which they want before processing anything. When a human draft yields no live documentation, report that conclusion; under `delete`, obtain owner approval before dispatching its deletion, and under `archive`, dispatch its archiving without approval. A change note (`change-*.md`) that yields none is consumed without approval: report the outcome and dispatch its consumption.
 
 ## Orchestrate
 
@@ -57,8 +57,8 @@ When documentation is justified:
 3. Dispatch a fresh-context `doc-reviewer` with the resulting paths, relevant repository evidence, and source paths for intake sources or re-admissions.
 4. On findings, dispatch the author again with them for correction, then dispatch a fresh re-review.
 5. Allow at most two author-review revision cycles. If material findings remain, stop and ask the owner.
-6. Finish only after review passes, mechanical checks are green, and every consumed intake source is deleted.
+6. Finish only after review passes, mechanical checks are green, and every intake source is consumed.
 
-When intake processing concludes with no documentation change for a change note, dispatch `doc-author` solely to delete the consumed notes. That deletion-only docs change needs no review and files no note. A human draft in the same outcome waits for the owner's approval before the same dispatch.
+When intake processing concludes with no documentation change for a change note, dispatch `doc-author` solely to consume the note. That consumption-only docs change needs no review and files no note. A human draft in the same outcome is archived the same way, or, when the installation deletes, waits for the owner's approval before the same dispatch.
 
 Do not create a repository work-order or findings file. Report completion in brief natural language, including material implementation concerns but not routine orchestration detail.

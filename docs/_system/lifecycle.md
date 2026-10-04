@@ -4,13 +4,16 @@ This is the management spec for an OttoDoc installation: how the engine and its 
 
 ## The record
 
-`docs/.ottodoc` is the single authoritative statement of which agent platforms are configured:
+`docs/.ottodoc` is the single authoritative statement of the installation's configuration — which agent platforms are configured, and what intake processing does with a source once it has been read:
 
 ```
 platforms: Claude, Codex
+intake: archive
 ```
 
-It lives outside `_system/` so it survives engine replacement, is committed like any other file, and is removed only by uninstall. Zero configured platforms is an ordinary state — the engine still works and CI still runs. Which platforms a repository uses is owner intent: it is always read from the record, never guessed from files lying around.
+It lives outside `_system/` so it survives engine replacement, is committed like any other file, and is removed only by uninstall. Each line is one setting, and a command that changes one line preserves the others. Zero configured platforms is an ordinary state — the engine still works and CI still runs. Which platforms a repository uses is owner intent: it is always read from the record, never guessed from files lying around.
+
+**The intake setting** is `archive` or `delete`. With `delete`, a consumed intake source is deleted, and Git history is its archive. With `archive`, it is moved instead to `docs/_intake/archive/<YYYY-MM-DD>/`, the folder named for the day it was processed; it keeps its filename, and a name already present in that day's folder takes the first free numeric suffix (`-2`, `-3`, …) before its extension. The constitution states what each setting means for processing (§6). Install never assumes one: an install request that does not state it is answered by asking the owner before anything is written. Afterwards the owner changes it by asking the agent, which rewrites that one line of the record; nothing else reads it, so no converge follows. A missing line, or any value other than these two, is a question the coordinator puts to the owner before processing anything.
 
 ## The ignore file
 
@@ -99,7 +102,7 @@ A settings file that is not a JSON object — unparseable, or a JSON array or sc
 
 | Command | Script | Effect |
 |---|---|---|
-| install | `scripts/bootstrap.ps1 -Platform <name>` | Copy `_system/` into `<repo>/docs/_system`, then: create kind directories and `_intake/`, write the record, seed the ignore file, converge, lint + regen |
+| install | `scripts/bootstrap.ps1 -Platform <name> -Intake <archive\|delete>` | Copy `_system/` into `<repo>/docs/_system`, then: create kind directories and `_intake/`, write the record, seed the ignore file, converge, lint + regen |
 | upgrade | `scripts/upgrade.ps1` | Replace `docs/_system/` wholesale from the OttoDoc repository, then hand off to the new engine's `scripts/upgrade-finish.ps1`: restore a missing `_intake/` or ignore file, converge, lint + regen |
 | configure | `scripts/configure-platform.ps1 -Platform <name>` | Add the platform to the record, append a newly added platform's patterns to the ignore file, converge |
 | remove | `scripts/remove-platform.ps1 -Platform <name>` | Remove the platform from the record, converge; removing the last platform is fine |

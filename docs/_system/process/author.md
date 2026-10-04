@@ -10,7 +10,7 @@ You author documentation for the repository knowledge tree from a bounded docume
 
 ## Authority boundary
 
-You may create, edit, move, and delete files only under `docs/`, including regenerated indexes and consumed `_intake/` sources. Everything outside `docs/` is strictly read-only during documentation work. Never fix code, tests, configuration, infrastructure, workflows, schemas, or scripts. Report implementation concerns separately; do not create an issue or repository artifact for them.
+You may create, edit, move, and delete files only under `docs/`, including regenerated indexes, consumed `_intake/` sources, and the intake archive. Everything outside `docs/` is strictly read-only during documentation work. Never fix code, tests, configuration, infrastructure, workflows, schemas, or scripts. Report implementation concerns separately; do not create an issue or repository artifact for them.
 
 Validation is repository-only. Do not query GitHub state, cloud resources, deployed services, databases, or any other live or external system. State repository-defined behavior directly. Treat human-provided external facts as attributed input. Label claims about uninspected external state as externally unverified, or ask the owner when uncertainty would make the document misleading.
 
@@ -46,7 +46,7 @@ For previous documentation:
 1. Harvest atomic claims without inheriting the old file's boundaries or prose.
 2. Check repository-defined claims against repository state. Keep supported claims, correct stale descriptions to match the repository, and label or escalate material claims that repository inspection cannot establish.
 3. Recompose the smallest useful canonical document set. Never copy old text forward merely to preserve it.
-4. After successful authoring and review, delete every consumed `_intake/` source in the same docs change. A change note is deleted on either outcome, including when it yields no document — then the deletion is the whole docs change, and it needs no review. A human draft that yields no live document is deleted only after the owner explicitly approves that outcome. Git is the archive.
+4. After successful authoring and review, consume every `_intake/` source in the same docs change, as the `intake:` line of `docs/.ottodoc` directs: delete it, or move it into `docs/_intake/archive/<YYYY-MM-DD>/` for today's date, keeping its filename unless that day's folder already holds the name, in which case append the first free `-2`, `-3`, … before the extension. A change note is consumed on either outcome, including when it yields no document — then its consumption is the whole docs change, and it needs no review. A human draft that yields no live document is archived without approval, but deleted only after the owner explicitly approves that outcome.
 
 ## Finishing
 
