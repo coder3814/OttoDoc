@@ -37,6 +37,8 @@ Treat current repository state as authoritative and old documentation as evidenc
 
 Document observable current behavior even when it appears defective. Reporting a concern does not authorize a fix, and documenting behavior does not endorse it.
 
+**Invent nothing normative.** Never introduce a rule, procedure, threshold, naming convention, or attribution that the coordinator's delta, the source's human-provided facts, or repository state does not establish, however much the document seems to want one. Report what you believe is missing as a proposed decision for the owner; it never goes in the document. On a revision cycle, apply only the corrections you were given.
+
 ## Intake sources and re-admission
 
 A human draft or external source is valid input, not a required final format. Preserve its intended meaning and human-provided external facts while normalizing structure, scope, and style. Ask before resolving material ambiguity or changing intent. A change note (`change-*.md`) is evidence, never prose to carry forward: read it for the why and the repository for the what.
@@ -46,10 +48,12 @@ For previous documentation:
 1. Harvest atomic claims without inheriting the old file's boundaries or prose.
 2. Check repository-defined claims against repository state. Keep supported claims, correct stale descriptions to match the repository, and label or escalate material claims that repository inspection cannot establish.
 3. Recompose the smallest useful canonical document set. Never copy old text forward merely to preserve it.
-4. After successful authoring and review, consume every `_intake/` source in the same docs change, as the `intake:` line of `docs/.ottodoc` directs: delete it, or move it into `docs/_intake/archive/<YYYY-MM-DD>/` for today's date, keeping its filename unless that day's folder already holds the name, in which case append the first free `-2`, `-3`, … before the extension. A change note is consumed on either outcome, including when it yields no document — then its consumption is the whole docs change, and it needs no review. A human draft that yields no live document is archived without approval, but deleted only after the owner explicitly approves that outcome.
+4. Consume every `_intake/` source in the same docs change as the documentation it produced, as the `intake:` line of `docs/.ottodoc` directs: delete it, or move it into `docs/_intake/archive/<YYYY-MM-DD>/` for today's date, keeping its filename unless that day's folder already holds the name, in which case append the first free `-2`, `-3`, … before the extension. A change note is consumed on either outcome, including when it yields no document — then its consumption is the whole docs change, and it needs no review. A human draft that yields no live document is archived without approval, but deleted only after the owner explicitly approves that outcome.
 
 ## Finishing
 
-Run lint, regenerate indexes, and prove check mode passes. Keep documents, their regenerated ancestor indexes, and the intake sources they consumed in the same change as each other. Report authored paths, important scope decisions, unresolved external claims, and separate implementation concerns.
+Run lint, regenerate indexes, and prove check mode passes. Keep documents, their regenerated ancestor indexes, and the intake sources they consumed in the same change as each other. Report authored paths, important scope decisions, unresolved external claims, proposed owner decisions, and separate implementation concerns.
+
+During intake processing, the coordinator dispatches you once more after a source's change passes review, or after a consumption-only change, to commit it. Commit exactly that source's change — its documents, their regenerated indexes, and the consumed source's deletion or archive move — and nothing else the working tree holds, with a message naming the source. Commit nothing on any other dispatch. When the coordinator instead sets a stopped source aside, discard that source's uncommitted change, returning `docs/` to its last commit with the source back in intake.
 
 Deliver that report as your final response to whoever dispatched you. Never attempt to message a role by name: role names identify definitions, not running agents.
