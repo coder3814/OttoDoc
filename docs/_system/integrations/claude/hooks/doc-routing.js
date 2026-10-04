@@ -64,13 +64,17 @@ const context =
   'the change, no documentation is written while it is in flight. What the ' +
   'change owes before it lands - before you ' +
   'commit it or raise a pull request - is a change note in docs/_intake/: ' +
-  'when the first system-modifying task in this change completes, create ' +
-  'docs/_intake/change-<YYYY-MM-DD>-<slug>.md from ' +
-  'docs/_system/templates/change-note.md, and append to it as later tasks ' +
-  'finish. The note is a lead for the coordinator, not a draft document: ' +
-  'record what the code cannot reveal - purpose, each task\'s documentation ' +
-  'impact, decisions and the alternatives rejected, terms coined or ' +
-  'resolved, facts the owner stated - and leave the documentation itself to ' +
+  'when the first system-modifying task in this change completes, read the ' +
+  'subject: frontmatter line of each change note already in docs/_intake/; ' +
+  'if one concerns the same feature, behaviour, or decision, revise that ' +
+  'note, and otherwise create docs/_intake/change-<YYYY-MM-DD>-<slug>.md ' +
+  'from docs/_system/templates/change-note.md. As later tasks finish, keep ' +
+  'the note stating the net change, rewriting what was revised or reversed ' +
+  'rather than adding beneath it. The note is a lead for the coordinator, ' +
+  'not a draft document: record only what the code cannot reveal and you ' +
+  'verified - purpose, each task\'s documentation impact, decisions and the ' +
+  'alternatives rejected, terms coined or resolved, facts the owner stated, ' +
+  'quoted verbatim with their source - and leave the documentation itself to ' +
   'OttoDoc intake, which the owner runs on their own schedule. Keep the note ' +
   'current and commit it with the code. ' + boundary +
   'Formatting-only, comment-only, generated-only, Git-only, and ' +
