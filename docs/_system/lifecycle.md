@@ -86,6 +86,10 @@ A repository whose Claude installation lacks access to a named tier falls back t
 
 **Owner override.** There is none by design. Agent adapter paths are owned absolutely (above), so converge overwrites a hand-edited level on the next run. Changing a level means changing the role's canonical definition and the adapters together, which is the same discipline every other process change follows.
 
+## Dispatch
+
+The engine requires every role dispatch to be a call that returns, collected inside the coordinator's own run (`process/coordinator.md`). Claude Code runs subagents in the background by default, so the Claude `doc-coordinator` adapter states how the rule is met there: dispatch with the Agent tool's `run_in_background: false`, and never end the turn while a role is running. Codex and Cursor carry only the canonical rule.
+
 ## Converge
 
 Every lifecycle command shares one routine: read the record, then make disk match it for each supported platform. Configured — write the platform's owned files from the canon under `_system/integrations/` and upsert its block in the shared file. Not configured — delete its owned files and strip its block, deleting the shared file only when the block was all it held. The CI workflow and `docs/.gitattributes` are rendered unconditionally. `-Check` computes the same desired state and reports differences without writing anything, exiting nonzero on drift.
