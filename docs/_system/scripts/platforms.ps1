@@ -7,13 +7,21 @@
 
 $Script:SupportedPlatforms = @('Claude', 'Codex', 'Cursor')
 
-# Every OttoDoc command verb except install, which necessarily runs before any
-# adapter exists. Each verb becomes one slash-command adapter per platform.
-$Script:CommandVerbs = @(
-    'assess', 'create', 'update', 'rename', 'move', 'retire', 'intake',
-    'review', 'check', 'fix', 'explain', 'audit',
-    'upgrade', 'configure', 'remove', 'uninstall'
-)
+# The verbs that get a slash-command adapter on every platform: the ones the owner must
+# choose to trigger and a plain request would not reliably reach. Every other OttoDoc
+# action is a plain request or the prose form `OttoDoc <action>` (workflow.md); install
+# necessarily runs before any adapter exists.
+$Script:CommandVerbs = @('intake', 'assess', 'audit', 'upgrade', 'uninstall')
+
+# Where each platform keeps its per-verb adapters. Converge owns every ottodoc-* entry
+# under these roots, so a verb retired from the list above is deleted from existing
+# installations without a list of retired names. Directories = $true: each ottodoc-*
+# directory is one adapter; $false: each ottodoc-* file is one.
+$Script:AdapterNamespaces = @{
+    'Claude' = @{ Root = '.claude/skills'; Directories = $true }
+    'Codex'  = @{ Root = '.agents/skills'; Directories = $true }
+    'Cursor' = @{ Root = '.cursor/commands'; Directories = $false }
+}
 
 # The single authoritative statement of which files belong to which platform.
 # Ownership of the target paths is absolute (lifecycle.md): converge overwrites and
@@ -488,6 +496,25 @@ function Remove-GeneratedFile {
     }
 }
 
+function Get-NamespaceFiles {
+    # Every file under a platform's ottodoc-* adapter namespace, as repo-relative paths with
+    # forward slashes. Empty when the root does not exist.
+    param([string]$RepoRoot, $Namespace)
+    $root = Join-Path $RepoRoot ([string]$Namespace['Root'])
+    if (-not (Test-Path -LiteralPath $root -PathType Container)) { return @() }
+    $files = @()
+    if ($Namespace['Directories']) {
+        foreach ($directory in @(Get-ChildItem -LiteralPath $root -Directory -Filter 'ottodoc-*' -Force)) {
+            $files += @(Get-ChildItem -LiteralPath $directory.FullName -File -Recurse -Force)
+        }
+    }
+    else {
+        $files += @(Get-ChildItem -LiteralPath $root -File -Filter 'ottodoc-*' -Force)
+    }
+    $prefix = $RepoRoot.TrimEnd('\', '/')
+    return @($files | ForEach-Object { $_.FullName.Substring($prefix.Length + 1).Replace('\', '/') })
+}
+
 function Invoke-PlatformConverge {
     # Makes the repository match the record (lifecycle.md): for each supported platform,
     # configured -> owned files written from canon and block upserted; not configured ->
@@ -522,6 +549,14 @@ function Invoke-PlatformConverge {
                 $drift += ('{0}: belongs to unconfigured platform {1}' -f $targetRelative, $platform)
                 if (-not $Check) { Remove-GeneratedFile -Path $target }
             }
+        }
+
+        # An ottodoc-* adapter the map no longer lists is a retired verb: removed whether or
+        # not the platform is configured. Mapped files were handled above.
+        foreach ($leftover in (Get-NamespaceFiles -RepoRoot $RepoRoot -Namespace $Script:AdapterNamespaces[$platform])) {
+            if (@($adapter['Owned'].Values) -contains $leftover) { continue }
+            $drift += ('{0}: retired adapter' -f $leftover)
+            if (-not $Check) { Remove-GeneratedFile -Path (Join-Path $RepoRoot $leftover) }
         }
 
         $blockTarget = [string]$adapter['BlockTarget']

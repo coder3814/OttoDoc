@@ -185,7 +185,7 @@ try {
     Assert ($LASTEXITCODE -eq 0) 'configure Claude again after the refusal'
 
     # --- check actually detects drift, and converge repairs it ---
-    $ownedPath = Join-Path $repo '.claude\skills\ottodoc-check\SKILL.md'
+    $ownedPath = Join-Path $repo '.claude\skills\ottodoc-intake\SKILL.md'
     [System.IO.File]::WriteAllText($ownedPath, 'tampered')
     & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
     Assert ($LASTEXITCODE -ne 0) 'check fails on a tampered owned file'
@@ -193,6 +193,32 @@ try {
     Assert ($LASTEXITCODE -eq 0) 'converge repairs the tampered file'
     & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'check passes again after repair'
+
+    # --- each configured platform carries exactly the five command adapters ---
+    Assert (@(Get-ChildItem (Join-Path $repo '.claude\skills') -Directory -Filter 'ottodoc-*').Count -eq 5) 'Claude carries exactly five command adapters'
+    Assert (@(Get-ChildItem (Join-Path $repo '.agents\skills') -Directory -Filter 'ottodoc-*').Count -eq 5) 'Codex carries exactly five command adapters'
+
+    # --- a retired adapter is drift on any platform and converge deletes it; the owner's own files stay ---
+    $retired = @('.claude\skills\ottodoc-create\SKILL.md', '.agents\skills\ottodoc-review\SKILL.md', '.cursor\commands\ottodoc-fix.md')
+    foreach ($retiredPath in $retired) {
+        $full = Join-Path $repo $retiredPath
+        New-Item -ItemType Directory -Path (Split-Path -Parent $full) -Force | Out-Null
+        [System.IO.File]::WriteAllText($full, 'retired')
+    }
+    $ownerSkill = Join-Path $repo '.claude\skills\my-own-skill\SKILL.md'
+    New-Item -ItemType Directory -Path (Split-Path -Parent $ownerSkill) -Force | Out-Null
+    [System.IO.File]::WriteAllText($ownerSkill, 'owner skill')
+    $checkOutput = (& (Join-Path $scripts 'check-adapters.ps1')) -join "`n"
+    Assert ($LASTEXITCODE -ne 0 -and $checkOutput.Contains('.claude/skills/ottodoc-create/SKILL.md: retired adapter')) 'check reports a retired adapter on a configured platform'
+    Assert ($checkOutput.Contains('.cursor/commands/ottodoc-fix.md: retired adapter')) 'check reports a retired adapter on an unconfigured platform'
+    & (Join-Path $scripts 'configure-platform.ps1') -Platform Claude | Out-Null
+    Assert ($LASTEXITCODE -eq 0) 'converge removes the retired adapters'
+    Assert (@($retired | Where-Object { Test-Path (Join-Path $repo $_) }).Count -eq 0) 'no retired adapter file remains'
+    Assert (-not (Test-Path (Join-Path $repo '.claude\skills\ottodoc-create'))) 'the emptied retired directory is gone'
+    Assert ((Test-Path $ownerSkill) -and ((Read-Text $ownerSkill) -eq 'owner skill')) 'the owner''s own skill is untouched'
+    Remove-Item -LiteralPath (Join-Path $repo '.claude\skills\my-own-skill') -Recurse -Force
+    & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
+    Assert ($LASTEXITCODE -eq 0) 'check passes after the retired adapters are removed'
 
     # --- remove Codex: files gone, block stripped, owner content intact ---
     $ignoreBeforeRemove = Read-Text $ignorePath

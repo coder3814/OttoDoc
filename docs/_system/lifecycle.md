@@ -32,7 +32,7 @@ Nothing in the tooling enforces the patterns — the working agent and the coord
 
 ## The adapter map
 
-Every OttoDoc verb except `install` — the sixteen command verbs `assess`, `create`, `update`, `rename`, `move`, `retire`, `intake`, `review`, `check`, `fix`, `explain`, `audit`, `upgrade`, `configure`, `remove`, and `uninstall` — is generated as one slash-command adapter per platform: a `/ottodoc-<verb>` skill on Claude, an `ottodoc-<verb>` skill on Codex (invoked as `$ottodoc-<verb>`, since Codex has no repository-level slash commands), and a `/ottodoc-<verb>` command on Cursor. `install` has no adapter because it necessarily runs before any adapter exists.
+Five command verbs — `intake`, `assess`, `audit`, `upgrade`, and `uninstall` — are generated as one slash-command adapter per platform: a `/ottodoc-<verb>` skill on Claude, an `ottodoc-<verb>` skill on Codex (invoked as `$ottodoc-<verb>`, since Codex has no repository-level slash commands), and a `/ottodoc-<verb>` command on Cursor. Every other action, `install` included, is a plain request or the prose form `OttoDoc <action>`, defined in [`process/workflow.md`](process/workflow.md); the generated `CLAUDE.md`, `AGENTS.md`, and Cursor rule each carry one line saying so. A verb earns an adapter only when the owner must choose to trigger it, it orchestrates several roles, and a plain request would not reliably reach it.
 
 | Platform | Owned files - generated whole | Shared files - OttoDoc block or hook entry only |
 |---|---|---|
@@ -41,7 +41,7 @@ Every OttoDoc verb except `install` — the sixteen command verbs `assess`, `cre
 | Cursor | `.cursor/rules/documentation.mdc`, `.cursor/skills/documentation/SKILL.md`, `.cursor/agents/doc-coordinator.md`, `.cursor/agents/doc-author.md`, `.cursor/agents/doc-reviewer.md`, `.cursor/commands/ottodoc-<verb>.md` per command verb | none |
 | every configuration | `.github/workflows/docs.yml`, `docs/.gitattributes` | - |
 
-**Ownership of mapped paths is absolute.** The owned paths above belong to OttoDoc: converge overwrites and removes them without inspecting their content. Do not put your own files at these paths, and never edit a generated file directly — the next converge erases the edit.
+**Ownership of mapped paths is absolute.** The owned paths above belong to OttoDoc: converge overwrites and removes them without inspecting their content. So does each platform's adapter namespace — every `ottodoc-*` entry under `.claude/skills/`, `.agents/skills/`, and `.cursor/commands/`. An entry there that the map does not list is a retired adapter, and converge deletes it whether or not the platform is configured; that is how an upgrade removes the adapters of a verb the engine no longer generates, with no list of retired names to maintain. Do not put your own files at these paths, and never edit a generated file directly — the next converge erases the edit.
 
 ## Prompt-time obligations
 
@@ -54,7 +54,7 @@ On Claude, that surface is a `UserPromptSubmit` hook: the owned script `.claude/
 
 A prompt-time obligation fires on the agent's turn, so it covers the path where the agent commits the change or raises the pull request. An owner who commits by hand after the agent's last task passes no prompt through the hook, and nothing catches a change that lands without its note, or with a note the last task never reached. The constitution's rule is stricter than this mechanism: it says the note lands with the change, however the change lands. Closing that remainder would take a commit-time extension point — on Claude, a `PreToolUse` matcher on `git commit` — and until one is configured the agent-driven path is the covered one. This is recorded here rather than left to be discovered.
 
-Codex and Cursor currently expose no equivalent prompt-time extension point, so those platforms carry only the static block or rule — for the change note as much as for routing. That is a known, deliberate gap: when such an extension point appears, the same obligations should be injected there rather than approximated with more static text.
+Codex and Cursor currently expose no equivalent prompt-time extension point, so those platforms carry only the static block or rule — for the change note as much as for routing. The same gap weakens the smaller command surface there: a plain request such as "create a runbook" reaches OttoDoc reliably only where the prompt hook routes it, so on Codex and Cursor the pointer line in the static block is what leads an agent to the prose actions, and `OttoDoc <action>` is the dependable form. That is a known, deliberate gap: when such an extension point appears, the same obligations should be injected there rather than approximated with more static text.
 
 ## Reasoning levels
 
