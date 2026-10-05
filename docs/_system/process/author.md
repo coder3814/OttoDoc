@@ -20,6 +20,10 @@ Choose the kind by its reader question (constitution §2). One document answers 
 
 Split when major sections have independent entry conditions, prerequisites, risks, outcomes, maintenance causes, or uses. Do not split prerequisites, verification, warnings, or troubleshooting that serve the same reader goal. Prefer updating a canonical document over creating another owner for the same fact.
 
+The coordinator hands you the documents that already mention the delta's facts. Read them before writing. For each fact, choose the one document that owns it, state it there, and reduce every other mention to a link — editing those documents is part of your delta. When two documents disagree, resolve it against repository state (see Validation and conflicts). Do not leave a fact in a second place because moving it is inconvenient.
+
+A document the delta materially edits is yours whole: verify its claims against the repository, not only the lines you change, and correct the pre-existing defects the coordinator placed in scope. A rewrite shrinks or holds the document; if it already exceeds the size triggers, it must lose something — remove or split — for what it gains (constitution §3).
+
 ## The craft
 
 - Write the `description` as the one-sentence discovery surface: it lets a reader decide whether to open the document. Name the subject *and* the class of task the document bears on — what it constrains, decides, or enables — so an agent doing unrelated-looking work recognizes from the sentence alone that the document governs that work (constitution §3).

@@ -24,7 +24,7 @@ The system you assess has a boundary (constitution §8). `docs/`, Git's own file
 
 ## Assess
 
-Inspect the change's stated purpose, the documentation-impact notes its tasks reported, the accumulated diff, affected repository behavior, and related current documentation. Those notes are evidence, not a verdict: a task that reported no impact may still belong to a change that needs documentation, and impact a task flagged may have been absorbed by a later task in the same change. Stay bounded to the change as defined above; a diff spanning several tasks is still not a license for a repository-wide audit.
+Inspect the change's stated purpose, the documentation-impact notes its tasks reported, the accumulated diff, affected repository behavior, and related current documentation. Those notes are evidence, not a verdict: a task that reported no impact may still belong to a change that needs documentation, and impact a task flagged may have been absorbed by a later task in the same change. Stay bounded to the change as defined above; a diff spanning several tasks is still not a license for a repository-wide audit. The bound has one deliberate exception: a document the delta materially edits is verified whole, not only at the changed lines, and its pre-existing findings are part of the delta. You state in the delta which documents those are and how far the author may go — for example, only findings that can be fixed without growing the document or widening the change. Defects in documents the delta does not edit stay out of it.
 
 **Change notes.** When intake holds a change note, the change you assess is the change the note describes, verified against current repository state: the note says where to look and what the code cannot reveal, and the code says what is true now. Where history is needed, `git log -- docs/_intake/<note>` locates the commits that introduced and amended the note, and the change is there; the note carries no SHA bookkeeping, because its own history is the pointer. Several change notes in intake are assessed as one batch: a later change may absorb or reverse an earlier one, exactly as a later task may within a change, and the documentation delta is computed once over the whole. The batch stays bounded — the union of the noted changes is not a license for a repository-wide audit. A noted change whose behavior no longer exists in the repository falls out naturally as "no documentation change justified".
 
@@ -52,12 +52,13 @@ Every dispatch is a call that returns. Drive the whole cycle inside your own run
 
 When documentation is justified:
 
-1. Dispatch `doc-author` with a bounded documentation delta, relevant evidence and source paths, authority limits, and any human-provided facts.
-2. Confirm the author changed only authorized documentation paths and completed lint, regeneration, and check mode.
-3. Dispatch a fresh-context `doc-reviewer` with the resulting paths, relevant repository evidence, and source paths for intake sources or re-admissions.
-4. On findings, dispatch the author again with them for correction, then dispatch a fresh re-review.
-5. Allow at most two author-review revision cycles. If material findings remain, stop and ask the owner.
-6. Finish only after review passes, mechanical checks are green, and every consumed intake source is deleted.
+1. Check ownership before authoring. You alone hold the whole tree in view, and a fact retold across documents is invisible to any per-document review. Search the tree for the delta's key terms — the names, identifiers, and concepts it will state — and list every document that already mentions them.
+2. Dispatch `doc-author` with a bounded documentation delta, that ownership list, relevant evidence and source paths, authority limits, and any human-provided facts.
+3. Confirm the author changed only authorized documentation paths and completed lint, regeneration, and check mode.
+4. Dispatch a fresh-context `doc-reviewer` with the resulting paths, relevant repository evidence, and source paths for intake sources or re-admissions.
+5. On findings, dispatch the author again with them for correction, then dispatch a fresh re-review.
+6. Allow at most two author-review revision cycles. If material findings remain, stop and ask the owner.
+7. Finish only after review passes, mechanical checks are green, and every consumed intake source is deleted.
 
 When intake processing concludes with no documentation change for a change note, dispatch `doc-author` solely to delete the consumed notes. That deletion-only docs change needs no review and files no note. A human draft in the same outcome waits for the owner's approval before the same dispatch.
 
