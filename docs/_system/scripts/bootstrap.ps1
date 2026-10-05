@@ -1,13 +1,19 @@
 # Bootstraps the portable documentation engine in a repository (lifecycle.md: install).
-# Creates missing kind directories and docs/_intake/, records the chosen platform,
-# seeds docs/.ottodocignore, converges, and generates the indexes. Fails closed: a pre-existing nonconformant
-# tree aborts the install with nothing modified.
+# Creates missing kind directories and docs/_intake/, records the chosen platform and
+# intake setting, seeds docs/.ottodocignore, converges, and generates the indexes. Fails
+# closed: a pre-existing nonconformant tree aborts the install with nothing modified.
 
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
     [ValidateSet('Claude', 'Codex', 'Cursor')]
-    [string]$Platform
+    [string]$Platform,
+
+    # What happens to an intake source once processing has read it (lifecycle.md: the
+    # record). Mandatory because it is the owner's choice: install asks rather than assumes.
+    [Parameter(Mandatory = $true)]
+    [ValidateSet('archive', 'delete')]
+    [string]$Intake
 )
 
 . (Join-Path $PSScriptRoot 'platforms.ps1')
@@ -37,6 +43,7 @@ if ($LASTEXITCODE -ne 0) {
 
 try {
     Write-OttodocRecord -RepoRoot $repoRoot -Platforms @($Platform)
+    Set-OttodocRecordValue -RepoRoot $repoRoot -Key 'intake' -Value $Intake
     Add-OttodocIgnorePatterns -RepoRoot $repoRoot | Out-Null
     Invoke-PlatformConverge -RepoRoot $repoRoot -SystemRoot $systemRoot | Out-Null
 }
@@ -51,5 +58,5 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-Write-Output ('BOOTSTRAP OK: portable documentation engine installed; configured set is {0}.' -f $Platform)
+Write-Output ('BOOTSTRAP OK: portable documentation engine installed; configured set is {0}; consumed intake sources are {1}d.' -f $Platform, $Intake)
 exit 0

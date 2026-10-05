@@ -4,13 +4,16 @@ This is the management spec for an OttoDoc installation: how the engine and its 
 
 ## The record
 
-`docs/.ottodoc` is the single authoritative statement of which agent platforms are configured:
+`docs/.ottodoc` is the single authoritative statement of the installation's configuration — which agent platforms are configured, and what intake processing does with a source once it has been read:
 
 ```
 platforms: Claude, Codex
+intake: archive
 ```
 
-It lives outside `_system/` so it survives engine replacement, is committed like any other file, and is removed only by uninstall. Zero configured platforms is an ordinary state — the engine still works and CI still runs. Which platforms a repository uses is owner intent: it is always read from the record, never guessed from files lying around.
+It lives outside `_system/` so it survives engine replacement, is committed like any other file, and is removed only by uninstall. Each line is one setting, and a command that changes one line preserves the others. Zero configured platforms is an ordinary state — the engine still works and CI still runs. Which platforms a repository uses is owner intent: it is always read from the record, never guessed from files lying around.
+
+**The intake setting** is `archive` or `delete`. With `delete`, a consumed intake source is deleted, and Git history is its archive. With `archive`, it is moved instead to `docs/_intake/archive/<YYYY-MM-DD>/`, the folder named for the day it was processed; it keeps its filename, and a name already present in that day's folder takes the first free numeric suffix (`-2`, `-3`, …) before its extension. The constitution states what each setting means for processing (§6). Install never assumes one: an install request that does not state it is answered by asking the owner before anything is written. Afterwards the owner changes it by asking the agent, which rewrites that one line of the record; no script reads it, so no converge follows. A missing line, or any value other than these two, is a question the coordinator puts to the owner before processing anything, and the answer is written to the line as for any later change.
 
 ## The ignore file
 
@@ -83,6 +86,10 @@ A repository whose Claude installation lacks access to a named tier falls back t
 
 **Owner override.** There is none by design. Agent adapter paths are owned absolutely (above), so converge overwrites a hand-edited level on the next run. Changing a level means changing the role's canonical definition and the adapters together, which is the same discipline every other process change follows.
 
+## Dispatch
+
+The engine requires every role dispatch to be a call that returns, collected inside the coordinator's own run (`process/coordinator.md`). Claude Code runs subagents in the background by default, so the Claude `doc-coordinator` adapter states how the rule is met there: dispatch with the Agent tool's `run_in_background: false`, and never end the turn while a role is running. Codex and Cursor carry only the canonical rule.
+
 ## Converge
 
 Every lifecycle command shares one routine: read the record, then make disk match it for each supported platform. Configured — write the platform's owned files from the canon under `_system/integrations/` and upsert its block in the shared file. Not configured — delete its owned files and strip its block, deleting the shared file only when the block was all it held. The CI workflow and `docs/.gitattributes` are rendered unconditionally. `-Check` computes the same desired state and reports differences without writing anything, exiting nonzero on drift.
@@ -99,7 +106,7 @@ A settings file that is not a JSON object — unparseable, or a JSON array or sc
 
 | Command | Script | Effect |
 |---|---|---|
-| install | `scripts/bootstrap.ps1 -Platform <name>` | Copy `_system/` into `<repo>/docs/_system`, then: create kind directories and `_intake/`, write the record, seed the ignore file, converge, lint + regen |
+| install | `scripts/bootstrap.ps1 -Platform <name> -Intake <archive\|delete>` | Copy `_system/` into `<repo>/docs/_system`, then: create kind directories and `_intake/`, write the record, seed the ignore file, converge, lint + regen |
 | upgrade | `scripts/upgrade.ps1` | Replace `docs/_system/` wholesale from the OttoDoc repository, then hand off to the new engine's `scripts/upgrade-finish.ps1`: restore a missing `_intake/` or ignore file, converge, lint + regen |
 | configure | `scripts/configure-platform.ps1 -Platform <name>` | Add the platform to the record, append a newly added platform's patterns to the ignore file, converge |
 | remove | `scripts/remove-platform.ps1 -Platform <name>` | Remove the platform from the record, converge; removing the last platform is fine |

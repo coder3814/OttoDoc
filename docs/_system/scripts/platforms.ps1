@@ -133,11 +133,28 @@ function Read-OttodocRecord {
     return @(Select-OrderedPlatforms $found)
 }
 
+function Set-OttodocRecordValue {
+    # Rewrites one "key: value" line of docs/.ottodoc, appending it when absent. Every
+    # other line is the record's other settings and is preserved.
+    param([string]$RepoRoot, [string]$Key, [string]$Value)
+    $path = Join-Path $RepoRoot $Script:RecordTarget
+    $line = ('{0}: {1}' -f $Key, $Value).TrimEnd()
+    $lines = @()
+    if (Test-Path -LiteralPath $path -PathType Leaf) {
+        $lines = @([System.IO.File]::ReadAllText($path).Replace("`r`n", "`n").TrimEnd("`n").Split("`n") | Where-Object { $_ -ne '' })
+    }
+    $pattern = '^' + [regex]::Escape($Key) + ':'
+    if (@($lines | Where-Object { $_ -match $pattern }).Count -gt 0) {
+        $lines = @($lines | ForEach-Object { if ($_ -match $pattern) { $line } else { $_ } })
+    }
+    else { $lines += $line }
+    Write-Utf8LfFile -Path $path -Content (($lines -join "`n") + "`n")
+}
+
 function Write-OttodocRecord {
     param([string]$RepoRoot, [string[]]$Platforms)
     $ordered = @(Select-OrderedPlatforms $Platforms)
-    $content = ('platforms: ' + ($ordered -join ', ')).TrimEnd() + "`n"
-    Write-Utf8LfFile -Path (Join-Path $RepoRoot $Script:RecordTarget) -Content $content
+    Set-OttodocRecordValue -RepoRoot $RepoRoot -Key 'platforms' -Value ($ordered -join ', ')
 }
 
 # ---------------------------------------------------------------------------
