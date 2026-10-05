@@ -8,7 +8,7 @@ Documentation-only work may inspect the repository but may modify only `docs/`. 
 
 ## Agent interface
 
-Every OttoDoc action except `install` is a per-verb slash command in each configured platform: `/ottodoc-<verb>` in Claude Code and Cursor, and the `ottodoc-<verb>` skill in Codex, invoked as `$ottodoc-<verb>` because Codex has no repository-level slash commands. Supported actions are `install`, `upgrade`, `configure`, `remove`, `uninstall`, `assess`, `create`, `update`, `rename`, `move`, `retire`, `intake`, `review`, `check`, `fix`, and `explain`. The prose form `OttoDoc <action>` is the portable equivalent in any supported agent interface, and the only form for `install`, which necessarily runs before any adapter exists. Treat either form as an explicit request to use this documentation engine. The agent selects the applicable workflow, roles, templates, and deterministic tooling from the action and the instructions that follow it. `Update` edits a knowledge document, and `rename` changes only a concept filename while repairing links and regenerating indexes.
+Every OttoDoc action except `install` is a per-verb slash command in each configured platform: `/ottodoc-<verb>` in Claude Code and Cursor, and the `ottodoc-<verb>` skill in Codex, invoked as `$ottodoc-<verb>` because Codex has no repository-level slash commands. Supported actions are `install`, `upgrade`, `configure`, `remove`, `uninstall`, `assess`, `create`, `update`, `rename`, `move`, `retire`, `intake`, `review`, `check`, `fix`, `explain`, and `audit`. The prose form `OttoDoc <action>` is the portable equivalent in any supported agent interface, and the only form for `install`, which necessarily runs before any adapter exists. Treat either form as an explicit request to use this documentation engine. The agent selects the applicable workflow, roles, templates, and deterministic tooling from the action and the instructions that follow it. `Update` edits a knowledge document, and `rename` changes only a concept filename while repairing links and regenerating indexes.
 
 ### Lifecycle commands
 
@@ -29,6 +29,19 @@ Dispatch `doc-coordinator` for `OttoDoc assess`, for `OttoDoc intake`, and for e
 Dispatch is a call that returns. Each role delivers its report as its final response to whoever dispatched it, and the coordinator collects every result itself rather than ending its turn to wait for one. Roles never message each other by name, because a role name identifies a definition rather than a running agent.
 
 The coordinator, author, and reviewer retain the authority boundaries in their canonical definitions under `docs/_system/process/`.
+
+## Audit
+
+`OttoDoc audit [scope]` is the owner's on-demand sweep of the existing knowledge tree for quality debt that no single change surfaces: facts retold across documents, kind drift, change-process language, stale or wrong claims, and documents grown past their size triggers. The scope is one document path, one kind directory, or, when omitted, the whole tree; reject multiple scopes and patterns. It runs only when the owner asks — nothing schedules it, in keeping with the constitution's rejection of staleness timers — and it is read-only until the owner approves fixes.
+
+`doc-coordinator` runs it in four stages:
+
+1. **Mechanical.** Run lint and `regen.ps1 -Check`, and report their output, including any warnings lint prints. A failure here is a finding like any other; the audit continues.
+2. **Cross-document.** Search the tree in scope for facts stated in more than one document, for documents whose content does not fit their kind (constitution §2), for titles joined by "and", and for documents past the size triggers. These become candidates, not conclusions.
+3. **Review.** Dispatch fresh-context `doc-reviewer` instances, one per kind in scope, in parallel where the platform allows, splitting a large kind so no reviewer holds more than it can read in full. Hand each its documents and the stage 2 candidates that touch them. Each reviewer reads every document in full against its criteria and spot-checks a few concrete claims per document against the repository, reporting every finding, not only those in a change's delta.
+4. **Report.** Return one report in chat, grouped by document, each finding naming the criterion it violates and a concrete correction. Create no file and no issue (constitution §6).
+
+Audit changes no file. The owner approves findings — all of them or a chosen subset — and only then does the approved set become a delta for the normal loop: for each document, the coordinator lists the documents already mentioning the same facts, dispatches `doc-author`, then a fresh-context `doc-reviewer`, with at most two revision cycles before asking the owner. The documents the findings name are the delta's whole scope.
 
 ## Intake sources
 

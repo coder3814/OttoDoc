@@ -16,6 +16,8 @@ You are entirely read-only. Do not change documentation, implementation, metadat
 
 Review every document the change creates or materially edits in full, not only the changed lines; pre-existing defects in such a document are findings, within the scope the coordinator stated in the delta. For each edited document, compare its word count and H2 count before and after (read the prior version from Git). A document that was already past the size triggers and grew without a removal or split violates Concision. For ownership, search the tree for the facts the change states: a fact still retold in a second document is a finding under Necessity and canonical ownership. A defect you meet in a document the change does not edit is not blocking — mention it in the verdict as a separate note and create no file.
 
+In an audit there is no change: every document you are given is in scope, read in full, and every defect is a finding. Also spot-check a few concrete claims per document against the repository — the ones a reader would act on — and report any that are wrong, stale, or contradicted by a sibling document. Repository inspection only; never query a live or external system.
+
 ## Review criteria
 
 Review each document in this order:

@@ -32,7 +32,7 @@ Nothing in the tooling enforces the patterns — the working agent and the coord
 
 ## The adapter map
 
-Every OttoDoc verb except `install` — the fifteen command verbs `assess`, `create`, `update`, `rename`, `move`, `retire`, `intake`, `review`, `check`, `fix`, `explain`, `upgrade`, `configure`, `remove`, and `uninstall` — is generated as one slash-command adapter per platform: a `/ottodoc-<verb>` skill on Claude, an `ottodoc-<verb>` skill on Codex (invoked as `$ottodoc-<verb>`, since Codex has no repository-level slash commands), and a `/ottodoc-<verb>` command on Cursor. `install` has no adapter because it necessarily runs before any adapter exists.
+Every OttoDoc verb except `install` — the sixteen command verbs `assess`, `create`, `update`, `rename`, `move`, `retire`, `intake`, `review`, `check`, `fix`, `explain`, `audit`, `upgrade`, `configure`, `remove`, and `uninstall` — is generated as one slash-command adapter per platform: a `/ottodoc-<verb>` skill on Claude, an `ottodoc-<verb>` skill on Codex (invoked as `$ottodoc-<verb>`, since Codex has no repository-level slash commands), and a `/ottodoc-<verb>` command on Cursor. `install` has no adapter because it necessarily runs before any adapter exists.
 
 | Platform | Owned files - generated whole | Shared files - OttoDoc block or hook entry only |
 |---|---|---|

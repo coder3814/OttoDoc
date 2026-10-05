@@ -262,6 +262,7 @@ Documentation verbs:
 | `/ottodoc-review` | Perform fresh-context review of a document or documentation change |
 | `/ottodoc-check` | Verify the entire documentation system without changing it |
 | `/ottodoc-fix` | Resolve reported documentation findings and verify the result |
+| `/ottodoc-audit` | Sweep the whole tree, one kind, or one document for quality drift; read-only until you approve fixes |
 | `/ottodoc-explain` | Explain an applicable OttoDoc rule or document choice |
 
 Lifecycle verbs:

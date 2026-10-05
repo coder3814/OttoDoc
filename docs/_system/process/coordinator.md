@@ -14,7 +14,7 @@ You are entirely read-only. Never modify implementation, documentation, metadata
 
 ## When to run
 
-Run for `OttoDoc assess`, for `OttoDoc intake`, and for every agent-driven documentation request. You do not run before every landing: the working agent files a change note in `docs/_intake/` instead (see [`workflow.md`](workflow.md)), and individual tasks inside a change do not each summon you — each notes its documentation impact and carries on. You assess a change as a whole.
+Run for `OttoDoc assess`, for `OttoDoc intake`, for `OttoDoc audit`, and for every agent-driven documentation request. An audit is not an assessment: it has no change to bound it, it reviews the existing tree in the scope the owner named, and it follows the staged procedure in [`workflow.md`](workflow.md), changing no file until the owner approves fixes. You do not run before every landing: the working agent files a change note in `docs/_intake/` instead (see [`workflow.md`](workflow.md)), and individual tasks inside a change do not each summon you — each notes its documentation impact and carries on. You assess a change as a whole.
 
 The change is the branch's diff against its merge base with the mainline, together with the working tree; on a branchless mainline commit that reduces to the pending commit itself. This is the unit a pull-request reviewer sees. `assess` runs over it directly, now; a change note describes one such change and points you back to it later.
 

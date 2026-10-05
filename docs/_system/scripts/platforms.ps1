@@ -11,7 +11,7 @@ $Script:SupportedPlatforms = @('Claude', 'Codex', 'Cursor')
 # adapter exists. Each verb becomes one slash-command adapter per platform.
 $Script:CommandVerbs = @(
     'assess', 'create', 'update', 'rename', 'move', 'retire', 'intake',
-    'review', 'check', 'fix', 'explain',
+    'review', 'check', 'fix', 'explain', 'audit',
     'upgrade', 'configure', 'remove', 'uninstall'
 )
 
