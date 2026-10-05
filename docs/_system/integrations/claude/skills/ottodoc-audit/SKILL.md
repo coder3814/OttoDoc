@@ -1,7 +1,7 @@
 ---
 name: ottodoc-audit
 description: OttoDoc audit - Sweep the documentation tree for quality drift; read-only until you approve fixes.
-argument-hint: '[document path or kind]'
+argument-hint: '[document or directory path]'
 ---
 
 # OttoDoc audit

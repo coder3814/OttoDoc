@@ -252,7 +252,7 @@ Five actions are slash commands in your agent conversation: type `/ottodoc-<verb
 | --- | --- |
 | `/ottodoc-intake` | Process one named file from `docs/_intake/`, or all of intake when no filename is supplied — agents' change notes and humans' drafts alike |
 | `/ottodoc-assess` | Assess a completed change for documentation impact now, without waiting for intake |
-| `/ottodoc-audit` | Sweep the whole tree, one kind, or one document for quality drift; read-only until you approve fixes |
+| `/ottodoc-audit` | Sweep the whole tree, one directory, or one document for quality drift, one unit at a time with findings reported as each finishes; nothing changes until you approve a unit's fixes, each approved unit is committed on its own, and a later run resumes where you stopped |
 | `/ottodoc-upgrade` | Replace an existing engine with the newest version and refresh every recorded platform |
 | `/ottodoc-uninstall` | Remove the engine and every agent platform, keeping the documentation |
 
