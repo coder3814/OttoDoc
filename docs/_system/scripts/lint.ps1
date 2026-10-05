@@ -4,6 +4,9 @@
 # Template-hygiene checks (REPLACE description, replace-me tag, {{ placeholders) are deliberate
 # extras beyond the constitution's text - they catch a scaffold left unfinished.
 # Exit 0 = conformant; exit 1 = violations (one per line: path: message).
+# Beyond the failures it prints report-only warnings (WARN: path: message) for the judgment rules
+# a pattern can approximate - size, change-process language, kind fit, volatile values. Warnings
+# never change the exit code; the judgment itself stays with review (constitution section 8).
 
 [CmdletBinding()]
 param()
@@ -13,6 +16,8 @@ param()
 $docsRoot = Get-DocsRoot
 $errors = New-Object System.Collections.Generic.List[string]
 function Add-Err([string]$Path, [string]$Msg) { $errors.Add(('{0}: {1}' -f $Path, $Msg)) }
+$warnings = New-Object System.Collections.Generic.List[string]
+function Add-Warn([string]$Path, [string]$Msg) { $warnings.Add(('WARN: {0}: {1}' -f $Path, $Msg)) }
 
 $kebabFile  = '^[a-z0-9]+(-[a-z0-9]+)*\.md$'
 $kebabTag   = '^[a-z0-9]+(-[a-z0-9]+)*$'
@@ -238,6 +243,52 @@ foreach ($doc in $docs) {
             $linkTargets += $actual
         }
     }
+
+    # warnings: report-only approximations of judgment rules; prose excludes fenced code
+    $prose = @()
+    $inFence = $false
+    foreach ($line in $body) {
+        if ($line.TrimStart().StartsWith('```')) { $inFence = -not $inFence; continue }
+        if (-not $inFence) { $prose += $line }
+    }
+    $proseText = $prose -join "`n"
+
+    $words = @($proseText -split '\s+' | Where-Object { $_ -ne '' }).Count
+    $h2Count = @($prose | Where-Object { $_ -match '^##\s' }).Count
+    $maxWords = 1500
+    $maxH2 = 8
+    if ($kind -eq 'reference') { $maxWords = 800; $maxH2 = 5 }
+    if ($words -gt $maxWords -or $h2Count -gt $maxH2) {
+        Add-Warn $rel ('{0} words, {1} H2 sections - past the scope-review trigger of {2} words or {3} H2 sections (constitution section 3)' -f $words, $h2Count, $maxWords, $maxH2)
+    }
+
+    $processHits = @([regex]::Matches($proseText, '(?i)\b(this change|as of|the intake|until the same day)\b') |
+        ForEach-Object { $_.Value.ToLowerInvariant() } | Sort-Object -Unique)
+    if ($processHits.Count -gt 0) {
+        Add-Warn $rel ('change-process language "{0}" - describe the system as it is now, not how it got there (constitution section 3)' -f ($processHits -join '", "'))
+    }
+
+    if ($kind -eq 'reference' -or $kind -eq 'explanations') {
+        $imperativeHits = @([regex]::Matches($proseText, '(?i)\b(must|never)\b') |
+            ForEach-Object { $_.Value.ToLowerInvariant() } | Sort-Object -Unique)
+        if ($imperativeHits.Count -gt 0) {
+            Add-Warn $rel ('imperative "{0}" in a {1} document - it states facts or describes behavior and prescribes nothing (constitution section 2)' -f ($imperativeHits -join '", "'), $d['type'])
+        }
+    }
+
+    $volatileHits = @([regex]::Matches($proseText, '\b(?=[0-9a-f]*[0-9])(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}\b') | ForEach-Object { $_.Value }) +
+        @([regex]::Matches($proseText, '(?i)\b\d[\d,]*\s+(rows|records)\b') | ForEach-Object { $_.Value })
+    if ($volatileHits.Count -gt 0) {
+        Add-Warn $rel ('volatile value "{0}" - record one only when a task needs it, with the command that regenerates it (constitution section 3)' -f (($volatileHits | Sort-Object -Unique) -join '", "'))
+    }
+
+    if ($rel -ceq 'reference/glossary.md' -and $proseText -match '`[^`]+`') {
+        Add-Warn $rel 'code identifier in the glossary - definitions carry no implementation detail (constitution section 2)'
+    }
+
+    if ($kind -eq 'reference' -and $d.ContainsKey('description') -and ([string]$d['description']) -match '(?i)^why\b') {
+        Add-Warn $rel 'a Reference description that begins "Why" signals a Decision or Explanation (constitution section 2)'
+    }
 }
 
 # --- Orphan assets: every asset is linked from at least one doc (constitution section 5) ---
@@ -277,6 +328,10 @@ elseif (Test-Path -LiteralPath (Join-Path $docsRoot '.ottodoc') -PathType Leaf) 
 }
 
 # --- Report ---
+if ($warnings.Count -gt 0) {
+    $warnings | ForEach-Object { Write-Output $_ }
+    Write-Output ('LINT WARNINGS: {0} report-only warning(s); they do not fail the build.' -f $warnings.Count)
+}
 if ($errors.Count -gt 0) {
     $errors | ForEach-Object { Write-Output $_ }
     Write-Output ('LINT FAILED: {0} violation(s) across {1} document(s).' -f $errors.Count, $docs.Count)

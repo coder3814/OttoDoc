@@ -51,6 +51,24 @@ try {
     & (Join-Path $scripts 'check-adapters.ps1') | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'check passes after install'
 
+    # --- lint warnings are report-only: they name the document and never fail the build ---
+    $warnDoc = Join-Path $repo 'docs\reference\warning-sample.md'
+    [System.IO.File]::WriteAllText($warnDoc, (@(
+        '---', 'type: Reference', 'title: Warning sample', 'description: Why the sample warns.', 'tags: [sample]',
+        'generated:', '  by: human:test', '  at: 2026-01-01', '---', '',
+        '# Warning sample', '', '## Summary', '', 'This change adds a value as of last week; callers must use abc1234 and never retry.', '',
+        '## Facts', '', 'The table holds 4,200 rows.', ''
+    ) -join "`n"))
+    $lintOutput = (& (Join-Path $scripts 'lint.ps1')) -join "`n"
+    Assert ($LASTEXITCODE -eq 0) 'lint warnings leave the exit code at 0'
+    Assert ($lintOutput -match 'WARN: reference/warning-sample\.md: change-process language') 'lint warns on change-process language'
+    Assert ($lintOutput -match 'WARN: reference/warning-sample\.md: imperative') 'lint warns on imperatives in a Reference'
+    Assert ($lintOutput -match 'WARN: reference/warning-sample\.md: volatile value') 'lint warns on a bare commit identifier and a row count'
+    Assert ($lintOutput -match 'WARN: reference/warning-sample\.md: a Reference description that begins "Why"') 'lint warns on a Reference description that begins Why'
+    Remove-Item -LiteralPath $warnDoc -Force
+    $cleanOutput = (& (Join-Path $scripts 'lint.ps1')) -join "`n"
+    Assert ($cleanOutput -notmatch 'WARN:') 'a conformant tree prints no warnings'
+
     # --- install seeds the ignore file with every platform's surfaces, not only Codex's ---
     $ignorePath = Join-Path $repo 'docs\.ottodocignore'
     Assert (Test-Path $ignorePath) 'install seeds docs/.ottodocignore'
